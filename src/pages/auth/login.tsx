@@ -1,67 +1,52 @@
+// src/pages/auth/login.tsx
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { Mail, Lock, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { validators } from '@/lib/validation'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const [isSignUp, setIsSignUp] = useState(false)
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
   const router = useRouter()
 
   const validateForm = () => {
-    if (!email) {
-      setMessage({ type: 'error', text: 'Email is required' })
-      return false
+    const newErrors: { email?: string; password?: string } = {}
+    
+    const emailResult = validators.email(email)
+    if (!emailResult.isValid) {
+      newErrors.email = emailResult.error
     }
-    if (!email.includes('@')) {
-      setMessage({ type: 'error', text: 'Please enter a valid email' })
-      return false
+    
+    const passwordResult = validators.required(password, 'Password')
+    if (!passwordResult.isValid) {
+      newErrors.password = passwordResult.error
     }
-    if (!password) {
-      setMessage({ type: 'error', text: 'Password is required' })
-      return false
-    }
-    if (isSignUp && password.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters' })
-      return false
-    }
-    return true
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
 
     setLoading(true)
-    setMessage(null)
+    setErrors({})
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        })
-        if (error) throw error
-        setMessage({ 
-          type: 'success', 
-          text: 'Success! Check your email to confirm your account.' 
-        })
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (error) throw error
-        router.push('/dashboard')
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) throw error
+      router.push('/dashboard')
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.message || 'An error occurred. Please try again.' 
+      setErrors({ 
+        password: error.message || 'Invalid email or password' 
       })
     } finally {
       setLoading(false)
@@ -79,13 +64,13 @@ export default function Login() {
             </h1>
           </Link>
           <p className="text-slate-600 dark:text-slate-400">
-            {isSignUp ? 'Create your account' : 'Welcome back'}
+            Welcome back
           </p>
         </div>
 
         {/* Auth Card */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8">
-          <form onSubmit={handleAuth} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5">
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -99,19 +84,37 @@ export default function Login() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white focus:border-transparent"
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (errors.email) setErrors({ ...errors, email: undefined })
+                  }}
+                  className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+                    errors.email 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-slate-300 dark:border-slate-700 focus:ring-slate-900 dark:focus:ring-white'
+                  }`}
                   placeholder="you@example.com"
                   disabled={loading}
                 />
               </div>
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
+              )}
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Password
+                </label>
+                <Link 
+                  href="/auth/reset-password" 
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-slate-400" />
@@ -120,29 +123,23 @@ export default function Login() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white focus:border-transparent"
-                  placeholder={isSignUp ? "Create a password (min. 6 characters)" : "Enter your password"}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (errors.password) setErrors({ ...errors, password: undefined })
+                  }}
+                  className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+                    errors.password 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-slate-300 dark:border-slate-700 focus:ring-slate-900 dark:focus:ring-white'
+                  }`}
+                  placeholder="Enter your password"
                   disabled={loading}
                 />
               </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
+              )}
             </div>
-
-            {/* Message Display */}
-            {message && (
-              <div className={`flex items-start gap-3 p-3 rounded-lg ${
-                message.type === 'error' 
-                  ? 'bg-red-50 dark:bg-red-950/50 text-red-800 dark:text-red-200' 
-                  : 'bg-green-50 dark:bg-green-950/50 text-green-800 dark:text-green-200'
-              }`}>
-                {message.type === 'error' ? (
-                  <XCircle className="h-5 w-5 flex-shrink-0" />
-                ) : (
-                  <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                )}
-                <p className="text-sm">{message.text}</p>
-              </div>
-            )}
 
             {/* Submit Button */}
             <button
@@ -153,11 +150,11 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  {isSignUp ? 'Creating account...' : 'Signing in...'}
+                  Signing in...
                 </>
               ) : (
                 <>
-                  {isSignUp ? 'Create account' : 'Sign in'}
+                  Sign in
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -174,27 +171,23 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Toggle Auth Mode */}
+          {/* Sign Up Link */}
           <div className="text-center">
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setMessage(null)
-              }}
-              className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              {isSignUp ? (
-                <>Already have an account? <span className="font-medium">Sign in</span></>
-              ) : (
-                <>Don't have an account? <span className="font-medium">Sign up</span></>
-              )}
-            </button>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Don't have an account?{' '}
+              <Link href="/auth/signup" className="font-medium text-slate-900 dark:text-white hover:underline">
+                Sign up
+              </Link>
+            </p>
           </div>
         </div>
 
         {/* Footer */}
         <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our{' '}
+          <Link href="/terms" className="hover:underline">Terms of Service</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
         </p>
       </div>
     </div>
