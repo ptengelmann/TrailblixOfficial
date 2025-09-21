@@ -1,8 +1,12 @@
+// src/pages/resume-analyzer.tsx
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react'
+import PageLayout from '@/components/PageLayout'
+import LoadingSkeleton from '@/components/LoadingSkeleton'
+import EmptyState from '@/components/EmptyState'
+import { Upload, FileText, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react'
 
 interface ResumeAnalysis {
   score: number
@@ -39,7 +43,7 @@ export default function ResumeAnalyzer() {
       }
       setFile(selectedFile)
       setError('')
-      setAnalysis(null) // Reset analysis when new file is selected
+      setAnalysis(null)
     }
   }
 
@@ -61,7 +65,6 @@ export default function ResumeAnalyzer() {
       return data.text
     } catch (error) {
       console.error('PDF extraction error:', error)
-      // Fallback to filename if extraction fails
       throw new Error('Could not extract text from PDF. Please ensure it\'s a valid PDF file.')
     }
   }
@@ -73,7 +76,6 @@ export default function ResumeAnalyzer() {
     setError('')
 
     try {
-      // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}/${Date.now()}.${fileExt}`
       
@@ -83,7 +85,6 @@ export default function ResumeAnalyzer() {
 
       if (uploadError) throw uploadError
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('resumes')
         .getPublicUrl(fileName)
@@ -91,7 +92,6 @@ export default function ResumeAnalyzer() {
       setUploading(false)
       setAnalyzing(true)
 
-      // Extract text and analyze
       const resumeText = await extractTextFromPDF(file)
 
       const response = await fetch('/api/analyze-resume', {
@@ -104,7 +104,6 @@ export default function ResumeAnalyzer() {
 
       const analysisData = await response.json()
 
-      // Save to database
       await supabase.from('resumes').insert({
         user_id: user.id,
         file_name: file.name,
@@ -125,32 +124,24 @@ export default function ResumeAnalyzer() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
+      <PageLayout>
+        <LoadingSkeleton variant="resume" />
+      </PageLayout>
     )
   }
 
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="text-violet-400 hover:text-violet-300 mb-4 flex items-center gap-2"
-        >
-          <ArrowLeft size={20} />
-          Back to Dashboard
-        </button>
-
+    <PageLayout>
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent mb-8">
           Resume Analyzer
         </h1>
 
         <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-2 text-white">
               Upload your resume (PDF or Word)
             </label>
             <div className="relative">
@@ -158,9 +149,8 @@ export default function ResumeAnalyzer() {
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={handleFileChange}
-                className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-violet-500 file:text-white hover:file:bg-violet-600"
               />
-              <Upload className="absolute right-3 top-2.5 text-slate-400" size={20} />
             </div>
             {file && (
               <div className="flex items-center gap-2 mt-2 text-sm text-slate-400">
@@ -180,7 +170,7 @@ export default function ResumeAnalyzer() {
           <button
             onClick={handleUploadAndAnalyze}
             disabled={!file || uploading || analyzing}
-            className="w-full py-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg font-medium hover:from-violet-600 hover:to-indigo-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg font-medium hover:from-violet-600 hover:to-indigo-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-white"
           >
             {uploading ? (
               <>Uploading...</>
@@ -194,6 +184,16 @@ export default function ResumeAnalyzer() {
             )}
           </button>
         </div>
+
+        {!analysis && !analyzing && !uploading && (
+          <div className="mt-8">
+            <EmptyState
+              icon={<FileText className="h-8 w-8" />}
+              title="No analysis yet"
+              description="Upload your resume above to get AI-powered feedback and improve your chances of landing your dream job."
+            />
+          </div>
+        )}
 
         {analysis && (
           <div className="mt-8 bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
@@ -253,6 +253,6 @@ export default function ResumeAnalyzer() {
           </div>
         )}
       </div>
-    </div>
+    </PageLayout>
   )
 }

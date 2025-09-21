@@ -1,3 +1,4 @@
+// src/pages/dashboard.tsx
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
@@ -7,6 +8,7 @@ import { User, FileText, Target, Sparkles, TrendingUp } from 'lucide-react'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import ProfileCompletion from '@/components/ProfileCompletion'
+import EmptyState from '@/components/EmptyState'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
@@ -124,7 +126,7 @@ export default function Dashboard() {
   if (loading || profileLoading || hasCompletedOnboarding === null) {
     return (
       <PageLayout>
-        <LoadingSkeleton />
+        <LoadingSkeleton variant="dashboard" />
       </PageLayout>
     )
   }
@@ -203,7 +205,7 @@ export default function Dashboard() {
       </div>
 
       {/* AI Recommendations */}
-      {recommendations.length > 0 && (
+      {recommendations.length > 0 ? (
         <div className="bg-gradient-to-br from-violet-500/5 to-indigo-500/5 backdrop-blur-sm rounded-2xl p-6 border border-violet-500/20 mb-8">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-white">
             <Sparkles className="text-violet-400" size={20} />
@@ -220,7 +222,15 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-      )}
+      ) : careerGoals ? (
+        <div className="bg-gradient-to-br from-violet-500/5 to-indigo-500/5 backdrop-blur-sm rounded-2xl p-6 border border-violet-500/20 mb-8">
+          <EmptyState
+            icon={<Sparkles className="h-8 w-8" />}
+            title="No recommendations yet"
+            description="Click 'Get AI Recommendations' above to receive personalized career guidance based on your goals."
+          />
+        </div>
+      ) : null}
 
       {/* Quick Actions */}
       <div>
