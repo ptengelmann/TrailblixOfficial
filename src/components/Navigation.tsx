@@ -1,4 +1,4 @@
-// src/components/Navigation.tsx - Updated with job features
+// src/components/Navigation.tsx - Updated with AI Career Coach
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -12,7 +12,8 @@ import {
   X,
   Settings,
   Search,
-  Bookmark
+  Bookmark,
+  Sparkles
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -25,6 +26,7 @@ export default function Navigation() {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Resume Analyzer', href: '/resume-analyzer', icon: FileText },
+    { name: 'AI Career Coach', href: '/career-coach', icon: Sparkles },
     { name: 'Career Goals', href: '/onboarding', icon: Target },
     { name: 'Job Search', href: '/jobs', icon: Search },
     { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
