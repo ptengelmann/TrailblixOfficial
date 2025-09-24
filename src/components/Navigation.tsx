@@ -1,3 +1,4 @@
+// src/components/Navigation.tsx - Updated with job features
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -9,7 +10,9 @@ import {
   LogOut,
   Menu,
   X,
-  Settings
+  Settings,
+  Search,
+  Bookmark
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -23,8 +26,9 @@ export default function Navigation() {
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Resume Analyzer', href: '/resume-analyzer', icon: FileText },
     { name: 'Career Goals', href: '/onboarding', icon: Target },
-    { name: 'Settings', href: '/settings', icon: Settings }, 
-
+    { name: 'Job Search', href: '/jobs', icon: Search },
+    { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ]
 
   const isActive = (href: string) => router.pathname === href
