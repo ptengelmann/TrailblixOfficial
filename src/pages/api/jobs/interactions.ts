@@ -1,8 +1,8 @@
 // src/pages/api/jobs/interactions.ts
-// Handle job interactions: save, view, apply, dismiss
+// Fixed version with proper RLS handling
 
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({
@@ -29,15 +29,33 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // Verify authentication
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) {
-    return res.status(401).json({ error: 'Authentication required' })
+  // Get the session token from the Authorization header
+  const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid authorization header' })
   }
 
+  const token = authHeader.replace('Bearer ', '')
+
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // Create a user-scoped Supabase client with the session token
+    // This ensures RLS policies are properly enforced
+    const userSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    )
+
+    // Verify the user and get their ID
+    const { data: { user }, error: authError } = await userSupabase.auth.getUser()
     if (authError || !user) {
+      console.error('Authentication error:', authError)
       return res.status(401).json({ error: 'Invalid authentication' })
     }
 
@@ -48,16 +66,16 @@ export default async function handler(
 
     switch (action) {
       case 'create':
-        return await createInteraction(res, user.id, requestData)
+        return await createInteraction(res, userSupabase, user.id, requestData)
       
       case 'update':
-        return await updateInteraction(res, user.id, requestData)
+        return await updateInteraction(res, userSupabase, user.id, requestData)
       
       case 'delete':
-        return await deleteInteraction(res, user.id, requestData)
+        return await deleteInteraction(res, userSupabase, user.id, requestData)
       
       case 'list':
-        return await listInteractions(res, user.id, requestData)
+        return await listInteractions(res, userSupabase, user.id, requestData)
       
       default:
         return res.status(400).json({ error: 'Invalid action' })
@@ -74,6 +92,7 @@ export default async function handler(
 
 async function createInteraction(
   res: NextApiResponse,
+  userSupabase: any, // User-scoped Supabase client
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -86,8 +105,8 @@ async function createInteraction(
 
     console.log('Creating interaction:', { userId, job_id, interaction_type })
 
-    // Check if interaction already exists
-    const { data: existing, error: checkError } = await supabase
+    // Check if interaction already exists (using user-scoped client)
+    const { data: existing, error: checkError } = await userSupabase
       .from('job_interactions')
       .select('id')
       .eq('user_id', userId)
@@ -110,7 +129,7 @@ async function createInteraction(
     // Generate AI analysis if requested and it's a save action
     if (generate_ai_analysis && interaction_type === 'saved') {
       try {
-        const userContext = await getUserContext(userId)
+        const userContext = await getUserContext(userSupabase, userId)
         if (userContext.objectives) {
           const analysis = await generateJobMatchAnalysis(job_data, userContext)
           aiMatchScore = analysis.match_score
@@ -122,8 +141,8 @@ async function createInteraction(
       }
     }
 
-    // Create the interaction
-    const { data, error } = await supabase
+    // Create the interaction (using user-scoped client)
+    const { data, error } = await userSupabase
       .from('job_interactions')
       .insert({
         user_id: userId,
@@ -162,6 +181,7 @@ async function createInteraction(
 
 async function updateInteraction(
   res: NextApiResponse,
+  userSupabase: any,
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -176,7 +196,7 @@ async function updateInteraction(
     if (interaction_type) updateData.interaction_type = interaction_type
     if (notes !== undefined) updateData.notes = notes
 
-    const { data, error } = await supabase
+    const { data, error } = await userSupabase
       .from('job_interactions')
       .update(updateData)
       .eq('user_id', userId)
@@ -205,6 +225,7 @@ async function updateInteraction(
 
 async function deleteInteraction(
   res: NextApiResponse,
+  userSupabase: any,
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -215,7 +236,7 @@ async function deleteInteraction(
       return res.status(400).json({ error: 'Missing required field: job_id' })
     }
 
-    let query = supabase
+    let query = userSupabase
       .from('job_interactions')
       .delete()
       .eq('user_id', userId)
@@ -248,6 +269,7 @@ async function deleteInteraction(
 
 async function listInteractions(
   res: NextApiResponse,
+  userSupabase: any,
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -276,7 +298,7 @@ async function listInteractions(
       selectFields += `, ai_match_score, match_analysis`
     }
 
-    let query = supabase
+    let query = userSupabase
       .from('job_interactions')
       .select(selectFields.trim())
       .eq('user_id', userId)
@@ -304,7 +326,7 @@ async function listInteractions(
 
     // Get summary stats
     console.log('Fetching summary stats...')
-    const { data: stats, error: statsError } = await supabase
+    const { data: stats, error: statsError } = await userSupabase
       .from('job_interactions')
       .select('interaction_type')
       .eq('user_id', userId)
@@ -316,10 +338,10 @@ async function listInteractions(
 
     const summary = {
       total_interactions: stats?.length || 0,
-      saved_jobs: stats?.filter(s => s.interaction_type === 'saved').length || 0,
-      applied_jobs: stats?.filter(s => s.interaction_type === 'applied').length || 0,
-      viewed_jobs: stats?.filter(s => s.interaction_type === 'viewed').length || 0,
-      dismissed_jobs: stats?.filter(s => s.interaction_type === 'dismissed').length || 0
+      saved_jobs: stats?.filter((s: any) => s.interaction_type === 'saved').length || 0,
+      applied_jobs: stats?.filter((s: any) => s.interaction_type === 'applied').length || 0,
+      viewed_jobs: stats?.filter((s: any) => s.interaction_type === 'viewed').length || 0,
+      dismissed_jobs: stats?.filter((s: any) => s.interaction_type === 'dismissed').length || 0
     }
 
     console.log('Returning interactions and summary:', summary)
@@ -344,11 +366,11 @@ async function listInteractions(
   }
 }
 
-async function getUserContext(userId: string) {
+async function getUserContext(userSupabase: any, userId: string) {
   try {
     const [profileResult, objectivesResult] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
-      supabase.from('career_objectives').select('*').eq('user_id', userId).single()
+      userSupabase.from('user_profiles').select('*').eq('user_id', userId).single(),
+      userSupabase.from('career_objectives').select('*').eq('user_id', userId).single()
     ])
 
     return {

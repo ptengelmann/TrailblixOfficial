@@ -1,9 +1,9 @@
 // src/pages/jobs.tsx
-// Advanced job search interface with AI-powered matching
+// Optimized job search interface - prevents wasteful API calls
 
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
@@ -56,6 +56,7 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false) // Track if user has performed a search
   const [searchResults, setSearchResults] = useState<{
     total_results: number
     search_metadata?: any
@@ -71,18 +72,19 @@ export default function JobsPage() {
     experience_level: ''
   })
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/auth/login')
     }
   }, [user, authLoading, router])
 
+  // Load user preferences ONCE when component mounts
   useEffect(() => {
-    // Load user preferences and populate initial search
-    if (user) {
+    if (user && !hasSearched) {
       loadUserPreferences()
     }
-  }, [user])
+  }, [user]) // Only depend on user, not hasSearched
 
   const loadUserPreferences = async () => {
     try {
@@ -101,22 +103,22 @@ export default function JobsPage() {
           salary_max: data.job_preferences?.salary_max || prev.salary_max
         }))
 
-        // Auto-search if target role is set
-        if (data.target_role) {
-          performSearch({
-            ...filters,
-            query: data.target_role,
-            remote: data.work_preference === 'remote'
-          })
-        }
+        // DON'T auto-search - let user initiate the search
+        // This prevents wasting API calls on every page load
+        console.log('User preferences loaded, ready to search')
       }
     } catch (error) {
       console.error('Error loading user preferences:', error)
     }
   }
 
-  const performSearch = async (searchFilters = filters) => {
+  const performSearch = useCallback(async (searchFilters = filters) => {
+    // Prevent duplicate searches
+    if (loading) return
+
     setLoading(true)
+    setHasSearched(true) // Mark that user has performed a search
+    
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -152,47 +154,63 @@ export default function JobsPage() {
       })
     } catch (error) {
       console.error('Search error:', error)
-      // Could add toast notification here
+      // You might want to add a toast notification here
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, loading])
 
-const handleJobInteraction = async (job: Job, interactionType: 'viewed' | 'saved' | 'applied' | 'dismissed') => {
-  console.log('Button clicked!', job.id, interactionType)
-  
-  // Optimistically update UI immediately
-  setJobs(prevJobs => 
-    prevJobs.map(j => 
-      j.id === job.id 
-        ? { 
-            ...j, 
-            is_saved: interactionType === 'saved' ? true : j.is_saved,
-            is_viewed: interactionType === 'viewed' ? true : j.is_viewed
-          }
-        : j
-    )
-  )
-
-  try {
-    const { data: { session } } = await supabase.auth.getSession()
+  const handleJobInteraction = async (job: Job, interactionType: 'viewed' | 'saved' | 'applied' | 'dismissed') => {
+    console.log('Job interaction:', job.id, interactionType)
     
-    const response = await fetch('/api/jobs/interactions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`
-      },
-      body: JSON.stringify({
-        action: 'create',
-        job_id: job.id,
-        job_data: job,
-        interaction_type: interactionType,
-        generate_ai_analysis: interactionType === 'saved'
-      })
-    })
+    // Optimistically update UI immediately
+    setJobs(prevJobs => 
+      prevJobs.map(j => 
+        j.id === job.id 
+          ? { 
+              ...j, 
+              is_saved: interactionType === 'saved' ? true : j.is_saved,
+              is_viewed: interactionType === 'viewed' ? true : j.is_viewed
+            }
+          : j
+      )
+    )
 
-    if (!response.ok) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/jobs/interactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          action: 'create',
+          job_id: job.id,
+          job_data: job,
+          interaction_type: interactionType,
+          generate_ai_analysis: interactionType === 'saved'
+        })
+      })
+
+      if (!response.ok) {
+        // Revert the optimistic update on error
+        setJobs(prevJobs => 
+          prevJobs.map(j => 
+            j.id === job.id 
+              ? { 
+                  ...j, 
+                  is_saved: interactionType === 'saved' ? false : j.is_saved,
+                  is_viewed: interactionType === 'viewed' ? false : j.is_viewed
+                }
+              : j
+          )
+        )
+        console.error('Failed to save interaction')
+      }
+    } catch (error) {
+      console.error('Interaction error:', error)
       // Revert the optimistic update on error
       setJobs(prevJobs => 
         prevJobs.map(j => 
@@ -205,24 +223,8 @@ const handleJobInteraction = async (job: Job, interactionType: 'viewed' | 'saved
             : j
         )
       )
-      console.error('Failed to save interaction')
     }
-  } catch (error) {
-    console.error('Interaction error:', error)
-    // Revert the optimistic update on error
-    setJobs(prevJobs => 
-      prevJobs.map(j => 
-        j.id === job.id 
-          ? { 
-              ...j, 
-              is_saved: interactionType === 'saved' ? false : j.is_saved,
-              is_viewed: interactionType === 'viewed' ? false : j.is_viewed
-            }
-          : j
-      )
-    )
   }
-}
 
   const getMatchScoreColor = (score?: number) => {
     if (!score) return 'text-slate-400'
@@ -383,6 +385,23 @@ const handleJobInteraction = async (job: Job, interactionType: 'viewed' | 'saved
         {/* Job Results */}
         {loading ? (
           <LoadingSkeleton variant="default" />
+        ) : !hasSearched ? (
+          // Show empty state when user hasn't searched yet
+          <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center">
+            <Search className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Ready to find your next opportunity?</h3>
+            <p className="text-slate-400 mb-6">
+              Enter your target role and location above, then click Search to discover AI-matched job opportunities.
+            </p>
+            {filters.query && (
+              <button
+                onClick={() => performSearch()}
+                className="px-6 py-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg font-medium hover:from-violet-600 hover:to-indigo-600 transition-all text-white"
+              >
+                Search for "{filters.query}" jobs
+              </button>
+            )}
+          </div>
         ) : jobs.length === 0 ? (
           <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center">
             <Briefcase className="h-12 w-12 text-slate-600 mx-auto mb-4" />
