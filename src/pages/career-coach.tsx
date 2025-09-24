@@ -183,7 +183,7 @@ export default function CareerCoach() {
               Set up your career objectives to receive personalized AI coaching and strategic recommendations.
             </p>
             <button
-              onClick={() => router.push('/onboarding')}
+              onClick={() => router.push('/profile')}
               className="px-6 py-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all text-white font-medium"
             >
               Set Career Goals

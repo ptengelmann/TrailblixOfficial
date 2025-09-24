@@ -363,7 +363,7 @@ export default function Dashboard() {
               )}
               {hasProfile && !careerGoals && (
                 <Link 
-                  href="/onboarding"
+                  href="/profile"
                   className="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 rounded-lg text-yellow-300 text-sm transition-colors"
                 >
                   Set Career Goals

@@ -1,3 +1,4 @@
+// src/components/ProfileCompletion.tsx - Updated routing
 import { CheckCircle, Circle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -12,12 +13,12 @@ export default function ProfileCompletion({ profile, careerGoals, hasResume }: P
     {
       name: 'Basic Profile',
       completed: profile?.full_name && profile?.current_role,
-      href: '/profile'
+      href: '/profile'  // Updated to use unified page
     },
     {
-      name: 'Career Goals',
+      name: 'Career Goals', 
       completed: careerGoals?.target_role,
-      href: '/onboarding'
+      href: '/profile'  // Updated to use unified page
     },
     {
       name: 'Resume Upload',

@@ -24,10 +24,9 @@ export default function Navigation() {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Profile', href: '/profile', icon: User },
+    { name: 'Profile & Goals', href: '/profile', icon: User },
     { name: 'Resume Analyzer', href: '/resume-analyzer', icon: FileText },
     { name: 'AI Career Coach', href: '/career-coach', icon: Sparkles },
-    { name: 'Career Goals', href: '/onboarding', icon: Target },
     { name: 'Job Search', href: '/jobs', icon: Search },
     { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
     { name: 'Settings', href: '/settings', icon: Settings },
