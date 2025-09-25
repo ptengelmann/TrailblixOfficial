@@ -201,7 +201,11 @@ export default function Settings() {
   }
 
   if (authLoading) {
-    return <PageLayout><div className="text-white">Loading...</div></PageLayout>
+    return (
+      <PageLayout>
+        <div className="text-slate-900 dark:text-white">Loading...</div>
+      </PageLayout>
+    )
   }
 
   if (!user) return null
@@ -209,14 +213,14 @@ export default function Settings() {
   return (
     <PageLayout>
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
+        <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight mb-8">Settings</h1>
 
         {/* Message Banner */}
         {message && (
-          <div className={`mb-6 flex items-start gap-3 p-4 rounded-lg ${
+          <div className={`mb-6 flex items-start gap-3 p-4 rounded-lg border ${
             message.type === 'error' 
-              ? 'bg-red-950/50 border border-red-800 text-red-200' 
-              : 'bg-green-950/50 border border-green-800 text-green-200'
+              ? 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
+              : 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
           }`}>
             {message.type === 'error' ? (
               <XCircle className="h-5 w-5 flex-shrink-0" />
@@ -228,27 +232,27 @@ export default function Settings() {
         )}
 
         {/* Account Information */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-violet-400" />
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-600 dark:text-blue-500" />
             Account Information
           </h2>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-slate-400">Email</label>
-              <p className="text-white">{user.email}</p>
+              <label className="text-sm text-slate-600 dark:text-slate-400">Email</label>
+              <p className="text-slate-900 dark:text-white">{user.email}</p>
             </div>
             <div>
-              <label className="text-sm text-slate-400">User ID</label>
-              <p className="text-sm font-mono text-slate-500">{user.id}</p>
+              <label className="text-sm text-slate-600 dark:text-slate-400">User ID</label>
+              <p className="text-sm font-mono text-slate-500 dark:text-slate-400">{user.id}</p>
             </div>
           </div>
         </div>
 
         {/* Change Email */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Mail className="h-5 w-5 text-violet-400" />
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Mail className="h-5 w-5 text-blue-600 dark:text-blue-500" />
             Change Email Address
           </h2>
           <form onSubmit={handleEmailChange} className="space-y-4">
@@ -257,7 +261,7 @@ export default function Settings() {
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="New email address"
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={emailLoading}
             />
             <div className="relative">
@@ -266,13 +270,13 @@ export default function Settings() {
                 value={emailPassword}
                 onChange={(e) => setEmailPassword(e.target.value)}
                 placeholder="Current password (for verification)"
-                className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={emailLoading}
               />
               <button
                 type="button"
                 onClick={() => setShowEmailPassword(!showEmailPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 {showEmailPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -280,7 +284,7 @@ export default function Settings() {
             <button
               type="submit"
               disabled={emailLoading || !newEmail || !emailPassword}
-              className="px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {emailLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Update Email
@@ -289,9 +293,9 @@ export default function Settings() {
         </div>
 
         {/* Change Password */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Lock className="h-5 w-5 text-violet-400" />
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Lock className="h-5 w-5 text-blue-600 dark:text-blue-500" />
             Change Password
           </h2>
           <form onSubmit={handlePasswordChange} className="space-y-4">
@@ -300,7 +304,7 @@ export default function Settings() {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Current password"
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={passwordLoading}
             />
             <input
@@ -308,7 +312,7 @@ export default function Settings() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="New password (min 8 characters)"
-              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={passwordLoading}
             />
             <div className="relative">
@@ -317,13 +321,13 @@ export default function Settings() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={passwordLoading}
               />
               <button
                 type="button"
                 onClick={() => setShowPasswords(!showPasswords)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 {showPasswords ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -331,7 +335,7 @@ export default function Settings() {
             <button
               type="submit"
               disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
-              className="px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {passwordLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Update Password
@@ -340,62 +344,62 @@ export default function Settings() {
         </div>
 
         {/* Data Export */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Download className="h-5 w-5 text-violet-400" />
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Download className="h-5 w-5 text-blue-600 dark:text-blue-500" />
             Export Your Data
           </h2>
-          <p className="text-slate-300 text-sm mb-4">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
             Download all your data in JSON format (GDPR compliant)
           </p>
           <button
             onClick={handleExportData}
-            className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+            className="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           >
             Download Data
           </button>
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-red-950/20 rounded-xl border border-red-900/50 p-6">
-          <h2 className="text-xl font-semibold text-red-400 mb-4 flex items-center gap-2">
+        <div className="bg-red-50 dark:bg-red-950/50 rounded-xl border border-red-200 dark:border-red-800 p-6">
+          <h2 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             Danger Zone
           </h2>
-          <p className="text-sm text-red-300 mb-4">
+          <p className="text-sm text-red-600 dark:text-red-300 mb-4">
             Once you delete your account, there is no going back. All your data will be permanently removed.
           </p>
           
           {!showDeleteDialog ? (
             <button
               onClick={() => setShowDeleteDialog(true)}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
             >
               <Trash2 className="h-4 w-4" />
               Delete Account
             </button>
           ) : (
-            <div className="space-y-4 p-4 bg-red-950/40 rounded-lg border border-red-900">
-              <p className="text-white font-semibold">Are you absolutely sure?</p>
+            <div className="space-y-4 p-4 bg-red-100 dark:bg-red-950/70 rounded-lg border border-red-300 dark:border-red-800">
+              <p className="text-red-900 dark:text-red-100 font-semibold">Are you absolutely sure?</p>
               <input
                 type="text"
                 value={deleteConfirmation}
                 onChange={(e) => setDeleteConfirmation(e.target.value)}
                 placeholder="Type DELETE to confirm"
-                className="w-full px-4 py-2 bg-slate-800 border border-red-800 rounded-lg text-white placeholder-slate-400"
+                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-red-300 dark:border-red-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
               />
               <input
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
                 placeholder="Enter your password"
-                className="w-full px-4 py-2 bg-slate-800 border border-red-800 rounded-lg text-white placeholder-slate-400"
+                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-red-300 dark:border-red-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleDeleteAccount}
                   disabled={deleteLoading || deleteConfirmation !== 'DELETE'}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {deleteLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Permanently Delete
@@ -406,7 +410,7 @@ export default function Settings() {
                     setDeleteConfirmation('')
                     setDeletePassword('')
                   }}
-                  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  className="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                 >
                   Cancel
                 </button>

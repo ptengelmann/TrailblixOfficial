@@ -255,19 +255,19 @@ export default function UnifiedProfile() {
     <PageLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
             Profile & Career Goals
           </h1>
-          <p className="text-slate-400 mt-2">
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             Manage your professional information and career objectives
           </p>
         </div>
 
         {message && (
-          <div className={`mb-6 flex items-start gap-3 p-4 rounded-lg ${
+          <div className={`mb-6 flex items-start gap-3 p-4 rounded-lg border ${
             message.type === 'error' 
-              ? 'bg-red-950/50 border border-red-800 text-red-200' 
-              : 'bg-green-950/50 border border-green-800 text-green-200'
+              ? 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
+              : 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
           }`}>
             {message.type === 'error' ? (
               <XCircle className="h-5 w-5 flex-shrink-0" />
@@ -279,13 +279,13 @@ export default function UnifiedProfile() {
         )}
 
         {/* Profile Section */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 mb-8">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <User className="text-violet-400" size={24} />
+              <User className="text-blue-600 dark:text-blue-500" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-white">Professional Profile</h2>
-                <p className="text-slate-400 text-sm">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Professional Profile</h2>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
                   {hasExistingProfile ? 'Your current profile information' : 'Set up your basic professional information'}
                 </p>
               </div>
@@ -302,7 +302,7 @@ export default function UnifiedProfile() {
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white text-sm flex items-center gap-2 transition-colors"
+                  className="px-4 py-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 rounded-lg text-slate-900 dark:text-white text-sm flex items-center gap-2 transition-colors"
                 >
                   <X size={16} />
                   Cancel
@@ -311,7 +311,7 @@ export default function UnifiedProfile() {
             ) : (
               <button
                 onClick={() => setEditingSection('profile')}
-                className="px-4 py-2 bg-violet-500 hover:bg-violet-600 rounded-lg text-white text-sm flex items-center gap-2 transition-colors"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm flex items-center gap-2 transition-colors"
               >
                 <Edit3 size={16} />
                 {hasExistingProfile ? 'Edit' : 'Add Info'}
@@ -323,82 +323,82 @@ export default function UnifiedProfile() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Full Name</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Full Name</label>
                   <input
                     type="text"
                     value={profile.full_name}
                     onChange={(e) => handleChange('profile', 'full_name', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="John Doe"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Current Role</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Current Role</label>
                   <input
                     type="text"
                     value={profile.current_role}
                     onChange={(e) => handleChange('profile', 'current_role', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Senior Software Engineer"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Location</label>
+                <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Location</label>
                 <input
                   type="text"
                   value={profile.location}
                   onChange={(e) => handleChange('profile', 'location', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="San Francisco, CA"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">LinkedIn</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">LinkedIn</label>
                   <input
                     type="url"
                     value={profile.linkedin_url}
                     onChange={(e) => handleChange('profile', 'linkedin_url', e.target.value)}
-                    className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 ${
-                      errors.linkedin_url ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-violet-500'
+                    className={`w-full px-4 py-3 bg-white dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 ${
+                      errors.linkedin_url ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500'
                     }`}
                     placeholder="linkedin.com/in/johndoe"
                   />
                   {errors.linkedin_url && (
-                    <p className="mt-1 text-sm text-red-400">{errors.linkedin_url}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.linkedin_url}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">GitHub</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">GitHub</label>
                   <input
                     type="url"
                     value={profile.github_url}
                     onChange={(e) => handleChange('profile', 'github_url', e.target.value)}
-                    className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 ${
-                      errors.github_url ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-violet-500'
+                    className={`w-full px-4 py-3 bg-white dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 ${
+                      errors.github_url ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500'
                     }`}
                     placeholder="github.com/johndoe"
                   />
                   {errors.github_url && (
-                    <p className="mt-1 text-sm text-red-400">{errors.github_url}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.github_url}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Portfolio</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Portfolio</label>
                   <input
                     type="url"
                     value={profile.portfolio_url}
                     onChange={(e) => handleChange('profile', 'portfolio_url', e.target.value)}
-                    className={`w-full px-4 py-2.5 bg-slate-700/50 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 ${
-                      errors.portfolio_url ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-violet-500'
+                    className={`w-full px-4 py-3 bg-white dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 ${
+                      errors.portfolio_url ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500'
                     }`}
                     placeholder="johndoe.com"
                   />
                   {errors.portfolio_url && (
-                    <p className="mt-1 text-sm text-red-400">{errors.portfolio_url}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.portfolio_url}</p>
                   )}
                 </div>
               </div>
@@ -409,38 +409,38 @@ export default function UnifiedProfile() {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-slate-400 text-sm">Name</p>
-                      <p className="text-white">{profile.full_name || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Name</p>
+                      <p className="text-slate-900 dark:text-white">{profile.full_name || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Current Role</p>
-                      <p className="text-white">{profile.current_role || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Current Role</p>
+                      <p className="text-slate-900 dark:text-white">{profile.current_role || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Location</p>
-                      <p className="text-white">{profile.location || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Location</p>
+                      <p className="text-slate-900 dark:text-white">{profile.location || 'Not set'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-slate-400 text-sm">LinkedIn</p>
-                      <p className="text-white text-sm">{profile.linkedin_url || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">LinkedIn</p>
+                      <p className="text-slate-900 dark:text-white text-sm">{profile.linkedin_url || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">GitHub</p>
-                      <p className="text-white text-sm">{profile.github_url || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">GitHub</p>
+                      <p className="text-slate-900 dark:text-white text-sm">{profile.github_url || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Portfolio</p>
-                      <p className="text-white text-sm">{profile.portfolio_url || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Portfolio</p>
+                      <p className="text-slate-900 dark:text-white text-sm">{profile.portfolio_url || 'Not set'}</p>
                     </div>
                   </div>
                 </>
               ) : (
-                <div className="text-center py-8 border-2 border-dashed border-slate-600 rounded-lg">
-                  <User className="h-12 w-12 text-slate-500 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-slate-300 mb-2">No profile information yet</h3>
-                  <p className="text-slate-400 text-sm">Click "Add Info" to set up your professional profile</p>
+                <div className="text-center py-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
+                  <User className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">No profile information yet</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Click "Add Info" to set up your professional profile</p>
                 </div>
               )}
             </div>
@@ -448,13 +448,13 @@ export default function UnifiedProfile() {
         </div>
 
         {/* Career Goals Section */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Target className="text-violet-400" size={24} />
+              <Target className="text-blue-600 dark:text-blue-500" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-white">Career Goals</h2>
-                <p className="text-slate-400 text-sm">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Career Goals</h2>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
                   {hasExistingGoals ? 'Your current career objectives' : 'Define your career aspirations and goals'}
                 </p>
               </div>
@@ -471,7 +471,7 @@ export default function UnifiedProfile() {
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white text-sm flex items-center gap-2 transition-colors"
+                  className="px-4 py-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 rounded-lg text-slate-900 dark:text-white text-sm flex items-center gap-2 transition-colors"
                 >
                   <X size={16} />
                   Cancel
@@ -480,7 +480,7 @@ export default function UnifiedProfile() {
             ) : (
               <button
                 onClick={() => setEditingSection('career')}
-                className="px-4 py-2 bg-violet-500 hover:bg-violet-600 rounded-lg text-white text-sm flex items-center gap-2 transition-colors"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm flex items-center gap-2 transition-colors"
               >
                 <Edit3 size={16} />
                 {hasExistingGoals ? 'Edit' : 'Set Goals'}
@@ -492,21 +492,21 @@ export default function UnifiedProfile() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Target Role</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Target Role</label>
                   <input
                     type="text"
                     value={careerGoals.target_role}
                     onChange={(e) => handleChange('career', 'target_role', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Senior Product Manager"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Target Industry</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Target Industry</label>
                   <select
                     value={careerGoals.target_industry}
                     onChange={(e) => handleChange('career', 'target_industry', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select an industry</option>
                     <option value="tech">Technology</option>
@@ -521,11 +521,11 @@ export default function UnifiedProfile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Primary Goal</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Primary Goal</label>
                   <select
                     value={careerGoals.primary_goal}
                     onChange={(e) => handleChange('career', 'primary_goal', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select your primary goal</option>
                     <option value="promotion">Get promoted</option>
@@ -536,11 +536,11 @@ export default function UnifiedProfile() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Timeline</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Timeline</label>
                   <select
                     value={careerGoals.timeline}
                     onChange={(e) => handleChange('career', 'timeline', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select timeline</option>
                     <option value="immediate">0-3 months</option>
@@ -553,11 +553,11 @@ export default function UnifiedProfile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Career Stage</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Career Stage</label>
                   <select
                     value={careerGoals.career_stage}
                     onChange={(e) => handleChange('career', 'career_stage', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select your stage</option>
                     <option value="student">Student</option>
@@ -568,11 +568,11 @@ export default function UnifiedProfile() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Work Preference</label>
+                  <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Work Preference</label>
                   <select
                     value={careerGoals.work_preference}
                     onChange={(e) => handleChange('career', 'work_preference', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select preference</option>
                     <option value="remote">Remote</option>
@@ -583,12 +583,12 @@ export default function UnifiedProfile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Current Situation</label>
+                <label className="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Current Situation</label>
                 <textarea
                   value={careerGoals.current_situation}
                   onChange={(e) => handleChange('career', 'current_situation', e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Briefly describe your current career situation and what you're looking to achieve..."
                 />
               </div>
@@ -599,44 +599,44 @@ export default function UnifiedProfile() {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-slate-400 text-sm">Target Role</p>
-                      <p className="text-white">{careerGoals.target_role || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Target Role</p>
+                      <p className="text-slate-900 dark:text-white">{careerGoals.target_role || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Industry</p>
-                      <p className="text-white capitalize">{careerGoals.target_industry || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Industry</p>
+                      <p className="text-slate-900 dark:text-white capitalize">{careerGoals.target_industry || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Timeline</p>
-                      <p className="text-white">{careerGoals.timeline || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Timeline</p>
+                      <p className="text-slate-900 dark:text-white">{careerGoals.timeline || 'Not set'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-slate-400 text-sm">Primary Goal</p>
-                      <p className="text-white capitalize">{careerGoals.primary_goal?.replace('_', ' ') || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Primary Goal</p>
+                      <p className="text-slate-900 dark:text-white capitalize">{careerGoals.primary_goal?.replace('_', ' ') || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Career Stage</p>
-                      <p className="text-white capitalize">{careerGoals.career_stage || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Career Stage</p>
+                      <p className="text-slate-900 dark:text-white capitalize">{careerGoals.career_stage || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Work Preference</p>
-                      <p className="text-white capitalize">{careerGoals.work_preference || 'Not set'}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Work Preference</p>
+                      <p className="text-slate-900 dark:text-white capitalize">{careerGoals.work_preference || 'Not set'}</p>
                     </div>
                   </div>
                   {careerGoals.current_situation && (
                     <div>
-                      <p className="text-slate-400 text-sm">Current Situation</p>
-                      <p className="text-white text-sm">{careerGoals.current_situation}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Current Situation</p>
+                      <p className="text-slate-900 dark:text-white text-sm">{careerGoals.current_situation}</p>
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-center py-8 border-2 border-dashed border-slate-600 rounded-lg">
-                  <Target className="h-12 w-12 text-slate-500 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-slate-300 mb-2">No career goals defined</h3>
-                  <p className="text-slate-400 text-sm">Click "Set Goals" to define your career aspirations</p>
+                <div className="text-center py-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
+                  <Target className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">No career goals defined</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Click "Set Goals" to define your career aspirations</p>
                 </div>
               )}
             </div>

@@ -1,19 +1,19 @@
 // src/pages/404.tsx
 import Link from 'next/link'
-import { Home, Search, ArrowLeft } from 'lucide-react'
+import { Home, ArrowLeft } from 'lucide-react'
 
 export default function Custom404() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         <div className="mb-8">
-          <h1 className="text-9xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+          <h1 className="text-9xl font-light text-slate-900 dark:text-white mb-4 tracking-tight">
             404
           </h1>
-          <h2 className="text-2xl font-bold text-white mt-4 mb-2">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
             Page Not Found
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
             Sorry, we couldn't find the page you're looking for.
           </p>
         </div>
@@ -21,7 +21,7 @@ export default function Custom404() {
         <div className="space-y-3">
           <Link
             href="/dashboard"
-            className="block w-full py-3 px-4 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg font-medium hover:from-violet-600 hover:to-indigo-600 transition-all"
+            className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all"
           >
             <span className="flex items-center justify-center gap-2">
               <Home className="h-5 w-5" />
@@ -31,7 +31,7 @@ export default function Custom404() {
 
           <button
             onClick={() => window.history.back()}
-            className="block w-full py-3 px-4 bg-slate-800/40 border border-slate-700/50 rounded-lg font-medium hover:bg-slate-800 transition-all"
+            className="block w-full py-3 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-750 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
           >
             <span className="flex items-center justify-center gap-2">
               <ArrowLeft className="h-5 w-5" />
@@ -40,8 +40,8 @@ export default function Custom404() {
           </button>
         </div>
 
-        <div className="mt-8 text-sm text-slate-500">
-          <p>Lost? Try searching or return to the home page.</p>
+        <div className="mt-8 text-sm text-slate-500 dark:text-slate-600">
+          <p>Lost? Try going back or return to the dashboard.</p>
         </div>
       </div>
     </div>
