@@ -56,7 +56,7 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
   const [showFilters, setShowFilters] = useState(false)
-  const [hasSearched, setHasSearched] = useState(false) // Track if user has performed a search
+  const [hasSearched, setHasSearched] = useState(false)
   const [searchResults, setSearchResults] = useState<{
     total_results: number
     search_metadata?: any
@@ -84,7 +84,7 @@ export default function JobsPage() {
     if (user && !hasSearched) {
       loadUserPreferences()
     }
-  }, [user]) // Only depend on user, not hasSearched
+  }, [user])
 
   const loadUserPreferences = async () => {
     try {
@@ -103,8 +103,6 @@ export default function JobsPage() {
           salary_max: data.job_preferences?.salary_max || prev.salary_max
         }))
 
-        // DON'T auto-search - let user initiate the search
-        // This prevents wasting API calls on every page load
         console.log('User preferences loaded, ready to search')
       }
     } catch (error) {
@@ -113,11 +111,10 @@ export default function JobsPage() {
   }
 
   const performSearch = useCallback(async (searchFilters = filters) => {
-    // Prevent duplicate searches
     if (loading) return
 
     setLoading(true)
-    setHasSearched(true) // Mark that user has performed a search
+    setHasSearched(true)
     
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -154,7 +151,6 @@ export default function JobsPage() {
       })
     } catch (error) {
       console.error('Search error:', error)
-      // You might want to add a toast notification here
     } finally {
       setLoading(false)
     }
@@ -227,10 +223,10 @@ export default function JobsPage() {
   }
 
   const getMatchScoreColor = (score?: number) => {
-    if (!score) return 'text-slate-400'
-    if (score >= 80) return 'text-green-400'
-    if (score >= 60) return 'text-yellow-400'
-    return 'text-red-400'
+    if (!score) return 'text-slate-500 dark:text-slate-400'
+    if (score >= 80) return 'text-green-600 dark:text-green-500'
+    if (score >= 60) return 'text-amber-600 dark:text-amber-500'
+    return 'text-red-600 dark:text-red-500'
   }
 
   const formatTimeAgo = (dateString: string) => {
@@ -260,16 +256,16 @@ export default function JobsPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
             Job Search
           </h1>
-          <p className="text-slate-400 mt-2">
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             AI-powered job matching based on your career goals
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mb-6">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 mb-6">
           <div className="flex gap-4 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
@@ -279,7 +275,7 @@ export default function JobsPage() {
                 value={filters.query}
                 onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
                 onKeyPress={(e) => e.key === 'Enter' && performSearch()}
-                className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             
@@ -291,14 +287,14 @@ export default function JobsPage() {
                 value={filters.location}
                 onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
                 onKeyPress={(e) => e.key === 'Enter' && performSearch()}
-                className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             
             <button
               onClick={() => performSearch()}
               disabled={loading}
-              className="px-6 py-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg font-medium hover:from-violet-600 hover:to-indigo-600 transition-all disabled:opacity-50 text-white min-w-[100px]"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-all disabled:opacity-50 text-white min-w-[100px]"
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
@@ -307,7 +303,7 @@ export default function JobsPage() {
           {/* Advanced Filters Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-violet-400 hover:text-violet-300 transition-colors"
+            className="flex items-center gap-2 text-blue-600 dark:text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
           >
             <Filter size={16} />
             Advanced Filters
@@ -316,13 +312,13 @@ export default function JobsPage() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-slate-700/50 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Employment Type</label>
+                <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Employment Type</label>
                 <select
                   value={filters.employment_type}
                   onChange={(e) => setFilters(prev => ({ ...prev, employment_type: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Any</option>
                   <option value="full_time">Full Time</option>
@@ -332,32 +328,32 @@ export default function JobsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Salary Range</label>
+                <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Salary Range</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     placeholder="Min"
                     value={filters.salary_min || ''}
                     onChange={(e) => setFilters(prev => ({ ...prev, salary_min: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="number"
                     placeholder="Max"
                     value={filters.salary_max === 200000 ? '' : filters.salary_max}
                     onChange={(e) => setFilters(prev => ({ ...prev, salary_max: parseInt(e.target.value) || 200000 }))}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
               <div className="flex items-end">
-                <label className="flex items-center gap-2 text-white">
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={filters.remote}
                     onChange={(e) => setFilters(prev => ({ ...prev, remote: e.target.checked }))}
-                    className="rounded bg-slate-700 border-slate-600 text-violet-500 focus:ring-violet-500"
+                    className="rounded bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
                   Remote Jobs Only
                 </label>
@@ -368,13 +364,13 @@ export default function JobsPage() {
 
         {/* Search Results Header */}
         {searchResults && (
-          <div className="mb-6 text-slate-300">
+          <div className="mb-6 text-slate-600 dark:text-slate-400">
             Found {searchResults.total_results} jobs
             {searchResults.search_metadata?.query && (
               <span> for "{searchResults.search_metadata.query}"</span>
             )}
             {searchResults.search_metadata?.ai_matching_enabled && (
-              <span className="ml-2 text-violet-400 text-sm flex items-center gap-1">
+              <span className="ml-2 text-blue-600 dark:text-blue-500 text-sm flex items-center gap-1">
                 <Sparkles size={14} />
                 AI-powered matching enabled
               </span>
@@ -387,26 +383,26 @@ export default function JobsPage() {
           <LoadingSkeleton variant="default" />
         ) : !hasSearched ? (
           // Show empty state when user hasn't searched yet
-          <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center">
-            <Search className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Ready to find your next opportunity?</h3>
-            <p className="text-slate-400 mb-6">
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 text-center">
+            <Search className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Ready to find your next opportunity?</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
               Enter your target role and location above, then click Search to discover AI-matched job opportunities.
             </p>
             {filters.query && (
               <button
                 onClick={() => performSearch()}
-                className="px-6 py-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg font-medium hover:from-violet-600 hover:to-indigo-600 transition-all text-white"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-all text-white"
               >
                 Search for "{filters.query}" jobs
               </button>
             )}
           </div>
         ) : jobs.length === 0 ? (
-          <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center">
-            <Briefcase className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No jobs found</h3>
-            <p className="text-slate-400">
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 text-center">
+            <Briefcase className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No jobs found</h3>
+            <p className="text-slate-600 dark:text-slate-400">
               Try adjusting your search criteria or check back later for new opportunities.
             </p>
           </div>
@@ -415,16 +411,16 @@ export default function JobsPage() {
             {jobs.map((job) => (
               <div
                 key={job.id}
-                className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-violet-500/30 transition-all"
+                className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-white hover:text-violet-400 transition-colors">
+                      <h3 className="text-xl font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-500 transition-colors">
                         {job.title}
                       </h3>
                       {job.ai_match_score && (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-slate-700/50 rounded-lg">
+                        <div className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
                           <Star size={14} className={getMatchScoreColor(job.ai_match_score)} />
                           <span className={`text-sm font-medium ${getMatchScoreColor(job.ai_match_score)}`}>
                             {job.ai_match_score}% match
@@ -432,13 +428,13 @@ export default function JobsPage() {
                         </div>
                       )}
                       {job.location_type === 'remote' && (
-                        <span className="px-2 py-1 bg-green-900/30 text-green-300 text-xs rounded-lg border border-green-800/30">
+                        <span className="px-2 py-1 bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400 text-xs rounded-lg border border-green-200 dark:border-green-800">
                           Remote
                         </span>
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-4 text-slate-300 mb-3">
+                    <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400 mb-3">
                       <div className="flex items-center gap-1">
                         <Building size={16} />
                         {job.company.display_name}
@@ -459,18 +455,18 @@ export default function JobsPage() {
                       </div>
                     </div>
 
-                    <p className="text-slate-400 text-sm mb-4 line-clamp-3">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3">
                       {job.description.substring(0, 300)}...
                     </p>
 
                     {job.match_reasons && job.match_reasons.length > 0 && (
                       <div className="mb-4">
-                        <h4 className="text-sm font-medium text-violet-300 mb-2">Why this matches:</h4>
+                        <h4 className="text-sm font-medium text-blue-600 dark:text-blue-500 mb-2">Why this matches:</h4>
                         <div className="flex flex-wrap gap-2">
                           {job.match_reasons.map((reason, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 bg-violet-900/30 text-violet-200 text-xs rounded border border-violet-800/30"
+                              className="px-2 py-1 bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-xs rounded border border-blue-200 dark:border-blue-800"
                             >
                               {reason}
                             </span>
@@ -479,9 +475,9 @@ export default function JobsPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="px-2 py-1 bg-slate-700/30 rounded">{job.category.label}</span>
-                      <span className="px-2 py-1 bg-slate-700/30 rounded">{job.contract_type || 'Full-time'}</span>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded">{job.category.label}</span>
+                      <span className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded">{job.contract_type || 'Full-time'}</span>
                     </div>
                   </div>
 
@@ -490,8 +486,8 @@ export default function JobsPage() {
                       onClick={() => handleJobInteraction(job, 'saved')}
                       className={`p-2 rounded-lg transition-colors ${
                         job.is_saved 
-                          ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' 
-                          : 'bg-slate-700/50 text-slate-400 hover:text-violet-400 hover:bg-violet-500/10'
+                          ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-500 border border-blue-200 dark:border-blue-800' 
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       {job.is_saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
@@ -502,7 +498,7 @@ export default function JobsPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => handleJobInteraction(job, 'viewed')}
-                      className="p-2 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all text-white"
+                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all text-white"
                     >
                       <ExternalLink size={18} />
                     </a>
