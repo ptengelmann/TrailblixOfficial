@@ -1,9 +1,8 @@
-// src/pages/auth/login.tsx
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Loader2, Brain } from 'lucide-react'
 import { validators } from '@/lib/validation'
 
 export default function Login() {
@@ -54,23 +53,30 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <Link href="/">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              Traiblix
-            </h1>
-          </Link>
-          <p className="text-slate-600 dark:text-slate-400">
-            Welcome back
-          </p>
-        </div>
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex">
+      {/* Left side - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Logo/Brand */}
+          <div className="mb-8">
+            <Link href="/" className="inline-flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                Traiblix
+              </h1>
+            </Link>
+            <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight mb-2">
+              Welcome back
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400">
+              Access your career intelligence dashboard
+            </p>
+          </div>
 
-        {/* Auth Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8">
-          <form onSubmit={handleLogin} className="space-y-5">
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -88,17 +94,17 @@ export default function Login() {
                     setEmail(e.target.value)
                     if (errors.email) setErrors({ ...errors, email: undefined })
                   }}
-                  className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+                  className={`block w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
                     errors.email 
                       ? 'border-red-500 focus:ring-red-500' 
-                      : 'border-slate-300 dark:border-slate-700 focus:ring-slate-900 dark:focus:ring-white'
+                      : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500 focus:border-blue-500'
                   }`}
                   placeholder="you@example.com"
                   disabled={loading}
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
               )}
             </div>
 
@@ -110,7 +116,7 @@ export default function Login() {
                 </label>
                 <Link 
                   href="/auth/reset-password" 
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -127,17 +133,17 @@ export default function Login() {
                     setPassword(e.target.value)
                     if (errors.password) setErrors({ ...errors, password: undefined })
                   }}
-                  className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+                  className={`block w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
                     errors.password 
                       ? 'border-red-500 focus:ring-red-500' 
-                      : 'border-slate-300 dark:border-slate-700 focus:ring-slate-900 dark:focus:ring-white'
+                      : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500 focus:border-blue-500'
                   }`}
                   placeholder="Enter your password"
                   disabled={loading}
                 />
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
               )}
             </div>
 
@@ -145,7 +151,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -154,7 +160,7 @@ export default function Login() {
                 </>
               ) : (
                 <>
-                  Sign in
+                  Sign in to dashboard
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -162,33 +168,68 @@ export default function Login() {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+              <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-slate-900 text-slate-500">or</span>
+              <span className="px-3 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400">
+                New to Traiblix?
+              </span>
             </div>
           </div>
 
           {/* Sign Up Link */}
           <div className="text-center">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Don't have an account?{' '}
-              <Link href="/auth/signup" className="font-medium text-slate-900 dark:text-white hover:underline">
-                Sign up
-              </Link>
+            <Link 
+              href="/auth/signup" 
+              className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+            >
+              Create your account
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Footer */}
+          <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            By continuing, you agree to our{' '}
+            <Link href="/terms" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Terms of Service
+            </Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Privacy Policy
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* Right side - Brand/Features */}
+      <div className="hidden lg:flex lg:flex-1 bg-slate-50 dark:bg-slate-900 items-center justify-center p-12">
+        <div className="max-w-md">
+          <div className="mb-8">
+            <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+              Career intelligence that actually works
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Get AI-powered insights, salary forecasting, and strategic career guidance in minutes, not months.
             </p>
           </div>
-        </div>
 
-        {/* Footer */}
-        <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          By continuing, you agree to our{' '}
-          <Link href="/terms" className="hover:underline">Terms of Service</Link>
-          {' '}and{' '}
-          <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-        </p>
+          <div className="space-y-4">
+            {[
+              { label: 'AI career analysis', value: '15 seconds' },
+              { label: 'Prediction accuracy', value: '94%' },
+              { label: 'Jobs analyzed', value: '47,000+' },
+              { label: 'Average salary increase', value: '+73%' }
+            ].map((stat, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                <span className="text-sm text-slate-600 dark:text-slate-400">{stat.label}</span>
+                <span className="text-sm font-semibold text-blue-600 dark:text-blue-500">{stat.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
