@@ -179,93 +179,93 @@ export default function Dashboard() {
   return (
     <PageLayout>
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 backdrop-blur-sm rounded-2xl p-8 border border-violet-500/20 mb-8">
-        <h2 className="text-3xl font-bold text-white mb-2">
-          Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}!
+      <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 mb-8">
+        <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight mb-2">
+          Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}
         </h2>
-        <p className="text-slate-300 text-lg">
+        <p className="text-slate-600 dark:text-slate-400 text-lg">
           {profile?.current_role || 'Complete your setup to unlock personalized career insights'}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Setup Progress */}
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
-          <h3 className="text-lg font-bold text-white mb-4">Setup Progress</h3>
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Setup Progress</h3>
           
           <div className="mb-6">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-slate-400">Complete</span>
-              <span className="text-slate-400">{completedSteps}/{totalSteps}</span>
+              <span className="text-slate-600 dark:text-slate-400">Complete</span>
+              <span className="text-slate-600 dark:text-slate-400">{completedSteps}/{totalSteps}</span>
             </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
               <div 
-                className="bg-gradient-to-r from-violet-500 to-indigo-500 h-2 rounded-full transition-all"
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
               ></div>
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className={`flex items-center gap-3 ${hasProfile ? 'text-green-400' : 'text-slate-400'}`}>
-              <CheckCircle size={16} className={hasProfile ? 'text-green-400' : 'text-slate-600'} />
-              <span className="text-sm">Career Profile</span>
+            <div className={`flex items-center gap-3 ${hasProfile ? 'text-green-600 dark:text-green-500' : 'text-slate-400 dark:text-slate-600'}`}>
+              <CheckCircle size={16} className={hasProfile ? 'text-green-600 dark:text-green-500' : 'text-slate-300 dark:text-slate-600'} />
+              <span className="text-sm font-medium">Career Profile</span>
             </div>
-            <div className={`flex items-center gap-3 ${careerGoals ? 'text-green-400' : 'text-slate-400'}`}>
-              <CheckCircle size={16} className={careerGoals ? 'text-green-400' : 'text-slate-600'} />
-              <span className="text-sm">Career Goals</span>
+            <div className={`flex items-center gap-3 ${careerGoals ? 'text-green-600 dark:text-green-500' : 'text-slate-400 dark:text-slate-600'}`}>
+              <CheckCircle size={16} className={careerGoals ? 'text-green-600 dark:text-green-500' : 'text-slate-300 dark:text-slate-600'} />
+              <span className="text-sm font-medium">Career Goals</span>
             </div>
-            <div className={`flex items-center gap-3 ${hasResume ? 'text-green-400' : 'text-slate-400'}`}>
-              <CheckCircle size={16} className={hasResume ? 'text-green-400' : 'text-slate-600'} />
-              <span className="text-sm">Skills Analysis</span>
+            <div className={`flex items-center gap-3 ${hasResume ? 'text-green-600 dark:text-green-500' : 'text-slate-400 dark:text-slate-600'}`}>
+              <CheckCircle size={16} className={hasResume ? 'text-green-600 dark:text-green-500' : 'text-slate-300 dark:text-slate-600'} />
+              <span className="text-sm font-medium">Skills Analysis</span>
             </div>
           </div>
         </div>
 
         {/* Current Status */}
-        <div className="lg:col-span-2 bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+        <div className="lg:col-span-2 bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
           {careerGoals ? (
             <>
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Target className="text-violet-400" size={20} />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <Target className="text-blue-600" size={20} />
                 Your Career Focus
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {careerGoals.target_role && (
-                  <div className="bg-slate-700/30 rounded-lg p-4">
-                    <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">Target Role</p>
-                    <p className="font-semibold text-white">{careerGoals.target_role}</p>
+                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                    <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">Target Role</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">{careerGoals.target_role}</p>
                   </div>
                 )}
                 
                 {careerGoals.primary_goal && (
-                  <div className="bg-slate-700/30 rounded-lg p-4">
-                    <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">Primary Goal</p>
-                    <p className="font-semibold text-white capitalize">{careerGoals.primary_goal.replace('_', ' ')}</p>
+                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                    <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">Primary Goal</p>
+                    <p className="font-semibold text-slate-900 dark:text-white capitalize">{careerGoals.primary_goal.replace('_', ' ')}</p>
                   </div>
                 )}
                 
                 {careerGoals.timeline && (
-                  <div className="bg-slate-700/30 rounded-lg p-4">
-                    <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">Timeline</p>
-                    <p className="font-semibold text-white capitalize">{careerGoals.timeline}-term</p>
+                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                    <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">Timeline</p>
+                    <p className="font-semibold text-slate-900 dark:text-white capitalize">{careerGoals.timeline}-term</p>
                   </div>
                 )}
               </div>
 
               {resumeData && (
-                <div className="bg-violet-500/10 rounded-lg p-4 border border-violet-500/20">
+                <div className="bg-blue-50 dark:bg-blue-950/50 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-violet-300 font-medium">Skills Analysis Complete</p>
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-blue-700 dark:text-blue-400 font-medium">Skills Analysis Complete</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">
                         Marketability Score: {resumeData.score || resumeData.overall_assessment?.marketability_score || 'N/A'}/100
                       </p>
                     </div>
                     <Link 
                       href="/resume-analyzer"
-                      className="px-4 py-2 bg-violet-500/20 hover:bg-violet-500/30 rounded-lg text-violet-300 text-sm transition-colors"
+                      className="px-4 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 rounded-lg text-blue-700 dark:text-blue-400 text-sm font-medium transition-colors"
                     >
                       View Details →
                     </Link>
@@ -283,39 +283,31 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Job Activity Summary - Clean version */}
+      {/* Job Activity Summary */}
       {jobStats && (
         <div className="mb-8">
-          <h3 className="text-xl font-bold text-white mb-4">Job Search Activity</h3>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-violet-400">{jobStats.saved_jobs || 0}</p>
-                <p className="text-slate-400 text-sm">Saved</p>
-              </div>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Job Search Activity</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-500">{jobStats.saved_jobs || 0}</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Saved</p>
             </div>
             
-            <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-400">{jobStats.applied_jobs || 0}</p>
-                <p className="text-slate-400 text-sm">Applied</p>
-              </div>
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-500">{jobStats.applied_jobs || 0}</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Applied</p>
             </div>
             
-            <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-400">{jobStats.viewed_jobs || 0}</p>
-                <p className="text-slate-400 text-sm">Viewed</p>
-              </div>
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-500">{jobStats.viewed_jobs || 0}</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Viewed</p>
             </div>
             
-            <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-yellow-400">
-                  {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
-                </p>
-                <p className="text-slate-400 text-sm">Apply Rate</p>
-              </div>
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
+              <p className="text-2xl font-bold text-orange-600 dark:text-orange-500">
+                {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
+              </p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Apply Rate</p>
             </div>
           </div>
         </div>
@@ -323,31 +315,31 @@ export default function Dashboard() {
 
       {/* Next Steps */}
       <div className="mb-8">
-        <h3 className="text-xl font-bold text-white mb-4">What's Next</h3>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">What's Next</h3>
         
         {completedSteps === totalSteps ? (
-          <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-6">
-            <h4 className="font-semibold text-green-300 mb-2">🎉 Setup Complete!</h4>
-            <p className="text-green-100 mb-4">You're all set up! Explore your personalized career insights and start applying to jobs.</p>
+          <div className="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-6">
+            <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2">Setup Complete!</h4>
+            <p className="text-green-700 dark:text-green-300 mb-4">You're all set up! Explore your personalized career insights and start applying to jobs.</p>
             <div className="flex gap-4">
               <Link 
                 href="/resume-analyzer"
-                className="px-4 py-2 bg-green-600/20 hover:bg-green-600/30 rounded-lg text-green-300 text-sm transition-colors"
+                className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
               >
                 View Skills Analysis
               </Link>
               <Link 
                 href="/jobs"
-                className="px-4 py-2 bg-green-600/20 hover:bg-green-600/30 rounded-lg text-green-300 text-sm transition-colors"
+                className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
               >
                 Find Jobs
               </Link>
             </div>
           </div>
         ) : (
-          <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-6">
-            <h4 className="font-semibold text-yellow-300 mb-2">Complete Your Setup</h4>
-            <p className="text-yellow-100 mb-4">
+          <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
+            <h4 className="font-semibold text-amber-800 dark:text-amber-400 mb-2">Complete Your Setup</h4>
+            <p className="text-amber-700 dark:text-amber-300 mb-4">
               {!hasProfile && "Start by setting up your career profile."}
               {hasProfile && !careerGoals && "Next, define your career goals."}
               {hasProfile && careerGoals && !hasResume && "Finally, upload your resume for skills analysis."}
@@ -356,7 +348,7 @@ export default function Dashboard() {
               {!hasProfile && (
                 <Link 
                   href="/profile"
-                  className="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 rounded-lg text-yellow-300 text-sm transition-colors"
+                  className="px-4 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm font-medium transition-colors"
                 >
                   Create Profile
                 </Link>
@@ -364,7 +356,7 @@ export default function Dashboard() {
               {hasProfile && !careerGoals && (
                 <Link 
                   href="/profile"
-                  className="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 rounded-lg text-yellow-300 text-sm transition-colors"
+                  className="px-4 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm font-medium transition-colors"
                 >
                   Set Career Goals
                 </Link>
@@ -372,7 +364,7 @@ export default function Dashboard() {
               {hasProfile && careerGoals && !hasResume && (
                 <Link 
                   href="/resume-analyzer"
-                  className="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 rounded-lg text-yellow-300 text-sm transition-colors"
+                  className="px-4 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm font-medium transition-colors"
                 >
                   Analyze Resume
                 </Link>
@@ -384,42 +376,42 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link href="/profile" className="group bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-violet-500/50 transition-all hover:transform hover:scale-105">
-            <div className="w-12 h-12 bg-violet-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-violet-500/20 transition-colors">
-              <User className="text-violet-400" size={24} />
+          <Link href="/profile" className="group bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+              <User className="text-blue-600 dark:text-blue-500" size={24} />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Career Profile</h3>
-            <p className="text-slate-400 text-sm">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Career Profile</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">
               {profile?.full_name ? 'Update your information' : 'Set up your career profile'}
             </p>
           </Link>
 
-          <Link href="/resume-analyzer" className="group bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-violet-500/50 transition-all hover:transform hover:scale-105">
-            <div className="w-12 h-12 bg-violet-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-violet-500/20 transition-colors">
-              <FileText className="text-violet-400" size={24} />
+          <Link href="/resume-analyzer" className="group bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+              <FileText className="text-blue-600 dark:text-blue-500" size={24} />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Skills Intelligence</h3>
-            <p className="text-slate-400 text-sm">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Skills Intelligence</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">
               {resumeData ? 
                 `Resume analyzed - ${resumeData.score}/100 score` :
                 'Get AI-powered skills analysis'
               }
             </p>
             {resumeData?.created_at && (
-              <p className="text-slate-500 text-xs mt-1">
+              <p className="text-slate-500 dark:text-slate-600 text-xs mt-1">
                 Last analyzed: {new Date(resumeData.created_at).toLocaleDateString()}
               </p>
             )}
           </Link>
 
-          <Link href="/jobs" className="group bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-violet-500/50 transition-all hover:transform hover:scale-105">
-            <div className="w-12 h-12 bg-violet-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-violet-500/20 transition-colors">
-              <Search className="text-violet-400" size={24} />
+          <Link href="/jobs" className="group bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+              <Search className="text-blue-600 dark:text-blue-500" size={24} />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Job Search</h3>
-            <p className="text-slate-400 text-sm">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Job Search</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">
               Find AI-matched opportunities based on your career goals
             </p>
           </Link>
