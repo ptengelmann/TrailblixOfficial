@@ -8,7 +8,6 @@ import Footer from '@/components/Footer'
 import HeroSection from '@/components/landing/HeroSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
 import HowItWorks from '@/components/landing/HowItWorks'
-import PricingSection from '@/components/landing/PricingSection'
 import Testimonials from '@/components/landing/Testimonials'
 import CTASection from '@/components/landing/CTASection'
 import DemoSection from '@/components/landing/DemoSection'
@@ -44,7 +43,6 @@ export default function Home({ hasAnthropicKey }: HomeProps) {
       <DemoSection />
       <FeaturesSection />
       <HowItWorks />
-      <PricingSection />
       <Testimonials />
       <CTASection />
       
