@@ -272,13 +272,144 @@ async function trackActivity(
       return res.status(400).json({ error: 'Missing activity_type' })
     }
 
+    // 1. Save the activity
     await trackUserActivity(userSupabase, userId, activity_type, activity_data)
+
+    // 2. Update relevant milestones based on activity type
+    if (activity_type === 'networking_activity') {
+      await updateMilestoneProgress(userSupabase, userId, 'networking', activity_data?.count || 1)
+    }
+    if (activity_type === 'job_applied') {
+      await updateMilestoneProgress(userSupabase, userId, 'application_goal', 1)
+    }
+
+    // 3. Recalculate current week's progress
+    await recalculateWeeklyProgress(userSupabase, userId)
 
     return res.status(200).json({ success: true })
 
   } catch (error: any) {
     console.error('Error tracking activity:', error)
     return res.status(500).json({ error: 'Failed to track activity' })
+  }
+}
+
+// New helper function to update milestone progress
+async function updateMilestoneProgress(
+  userSupabase: any, 
+  userId: string, 
+  milestoneType: string, 
+  incrementBy: number
+) {
+  try {
+    // Find the active milestone of this type
+    const { data: milestone, error: findError } = await userSupabase
+      .from('career_milestones')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('milestone_type', milestoneType)
+      .eq('status', 'active')
+      .order('target_date', { ascending: true })
+      .limit(1)
+      .single()
+
+    if (findError || !milestone) {
+      console.log(`No active ${milestoneType} milestone found for user ${userId}`)
+      return
+    }
+
+    // Update the current_value
+    const newCurrentValue = milestone.current_value + incrementBy
+    const { error: updateError } = await userSupabase
+      .from('career_milestones')
+      .update({ 
+        current_value: newCurrentValue,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', milestone.id)
+
+    if (updateError) {
+      console.error('Error updating milestone progress:', updateError)
+    } else {
+      console.log(`Updated ${milestoneType} milestone: ${milestone.current_value} → ${newCurrentValue}`)
+    }
+
+  } catch (error) {
+    console.error('Error in updateMilestoneProgress:', error)
+  }
+}
+
+// New helper function to recalculate weekly progress
+async function recalculateWeeklyProgress(userSupabase: any, userId: string) {
+  try {
+    // Get current week's start date (Monday)
+    const now = new Date()
+    const currentWeekStart = new Date(now)
+    const day = currentWeekStart.getDay()
+    const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1)
+    currentWeekStart.setDate(diff)
+    currentWeekStart.setHours(0, 0, 0, 0)
+    const weekStart = currentWeekStart.toISOString().split('T')[0]
+
+    // Get this week's activities
+    const [jobInteractions, userActivities, milestones] = await Promise.all([
+      userSupabase
+        .from('job_interactions')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('created_at', currentWeekStart.toISOString()),
+      
+      userSupabase
+        .from('user_activities')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('created_at', currentWeekStart.toISOString()),
+        
+      userSupabase
+        .from('career_milestones')
+        .select('*')
+        .eq('user_id', userId)
+    ])
+
+    // Calculate weekly data from activities
+    const thisWeekJobs = jobInteractions.data || []
+    const thisWeekActivities = userActivities.data || []
+    
+    const weeklyData = {
+      applications_count: thisWeekJobs.filter((j: any) => j.interaction_type === 'applied').length,
+      jobs_viewed: thisWeekJobs.filter((j: any) => j.interaction_type === 'viewed').length,
+      jobs_saved: thisWeekJobs.filter((j: any) => j.interaction_type === 'saved').length,
+      resume_updates: thisWeekActivities.filter((a: any) => a.activity_type === 'resume_updated').length,
+      skill_progress_updates: thisWeekActivities.filter((a: any) => a.activity_type === 'skill_learned').length,
+      networking_activities: thisWeekActivities.filter((a: any) => a.activity_type === 'networking_activity').length,
+      interview_count: thisWeekActivities.filter((a: any) => a.activity_type === 'job_interview').length || 0
+    }
+
+    const momentumScore = ProgressCalculator.calculateMomentumScore(weeklyData)
+    const goalProgress = ProgressCalculator.calculateGoalProgress(milestones.data || [])
+
+    // Upsert current week's progress
+    const { error } = await userSupabase
+      .from('weekly_progress')
+      .upsert({
+        user_id: userId,
+        week_start: weekStart,
+        ...weeklyData,
+        momentum_score: momentumScore,
+        goal_progress_percentage: goalProgress,
+        generated_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id,week_start' 
+      })
+
+    if (error) {
+      console.error('Error updating weekly progress:', error)
+    } else {
+      console.log('Weekly progress recalculated:', weeklyData)
+    }
+
+  } catch (error) {
+    console.error('Error in recalculateWeeklyProgress:', error)
   }
 }
 

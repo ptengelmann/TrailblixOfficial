@@ -1,4 +1,4 @@
-// src/pages/dashboard.tsx - Enhanced with progress tracking
+// src/pages/dashboard.tsx - Clean layout with original aesthetic preserved
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
@@ -9,6 +9,7 @@ import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import EmptyState from '@/components/EmptyState'
 import ProgressWidgets from '@/components/dashboard/ProgressWidgets'
+import NetworkingTracker from '@/components/NetworkingTracker'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
@@ -145,7 +146,6 @@ export default function Dashboard() {
   }
 
   const initializeProgressTracking = async () => {
-    // Check if user has career goals set up (prerequisite for progress tracking)
     try {
       const { data } = await supabase
         .from('career_objectives')
@@ -156,7 +156,6 @@ export default function Dashboard() {
       if (data) {
         setShowProgressTracking(true)
         
-        // Initialize default milestones if none exist
         const { data: existingMilestones } = await supabase
           .from('career_milestones')
           .select('id')
@@ -176,7 +175,6 @@ export default function Dashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
-      // Create default milestones based on career objectives
       let weeklyApplications = 3
       if (careerObjectives.timeline === 'immediate') weeklyApplications = 8
       else if (careerObjectives.timeline === 'short') weeklyApplications = 5
@@ -214,7 +212,6 @@ export default function Dashboard() {
         .from('career_milestones')
         .insert(defaultMilestones)
 
-      // Track milestone creation activity
       await fetch('/api/career-progress', {
         method: 'POST',
         headers: {
@@ -404,51 +401,56 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Job Activity Summary - Enhanced with weekly comparison */}
+          {/* Job Activity Summary */}
           {jobStats && (
-            <div className="mb-8">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 mb-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Job Search Activity</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Job Search Activity</h3>
                 {showProgressTracking && (
                   <Link href="/career-coach" className="text-blue-600 dark:text-blue-500 text-sm font-medium hover:underline">
                     View detailed insights →
                   </Link>
                 )}
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-500">{jobStats.saved_jobs || 0}</p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">Saved</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-500 mb-1">{jobStats.saved_jobs || 0}</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Saved</p>
                   {showProgressTracking && (
                     <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">This week</p>
                   )}
                 </div>
                 
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-500">{jobStats.applied_jobs || 0}</p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">Applied</p>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-500 mb-1">{jobStats.applied_jobs || 0}</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Applied</p>
                   {showProgressTracking && (
                     <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">This week</p>
                   )}
                 </div>
                 
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-500">{jobStats.viewed_jobs || 0}</p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">Viewed</p>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-500 mb-1">{jobStats.viewed_jobs || 0}</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Viewed</p>
                   {showProgressTracking && (
                     <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">This week</p>
                   )}
                 </div>
                 
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 text-center">
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-500">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-500 mb-1">
                     {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
                   </p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">Apply Rate</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Apply Rate</p>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Networking Tracker */}
+          <div className="mb-8">
+            <NetworkingTracker />
+          </div>
 
           {/* Next Steps */}
           <div className="mb-8">
