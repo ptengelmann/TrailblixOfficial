@@ -90,7 +90,7 @@ export default function Privacy() {
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">3. AI Processing</h2>
               <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
                 <p className="text-blue-800 dark:text-blue-200 leading-relaxed">
-                  We use Anthropic's Claude AI to process your career information and provide recommendations. Your data is sent to Anthropic's API for processing. Anthropic does not use your data to train their models. Please review Anthropic's privacy policy for more information.
+                  We use Anthropic&apos;s Claude AI to process your career information and provide recommendations. Your data is sent to Anthropic&apos;s API for processing. Anthropic does not use your data to train their models. Please review Anthropic&apos;s privacy policy for more information.
                 </p>
               </div>
             </section>
@@ -166,7 +166,7 @@ export default function Privacy() {
                   </li>
                   <li className="flex items-start gap-2 text-purple-800 dark:text-purple-200">
                     <span className="text-purple-600 dark:text-purple-500 mt-1">•</span>
-                    Right to erasure ("right to be forgotten")
+                    Right to erasure (&quot;right to be forgotten&quot;)
                   </li>
                   <li className="flex items-start gap-2 text-purple-800 dark:text-purple-200">
                     <span className="text-purple-600 dark:text-purple-500 mt-1">•</span>
@@ -203,7 +203,7 @@ export default function Privacy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">9. Children's Privacy</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">9. Children&apos;s Privacy</h2>
               <div className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
                 <p className="text-amber-800 dark:text-amber-200 leading-relaxed">
                   Our service is not intended for anyone under the age of 18. We do not knowingly collect personal information from children under 18.
@@ -214,7 +214,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">10. Changes to This Privacy Policy</h2>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.
+                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date.
               </p>
             </section>
 

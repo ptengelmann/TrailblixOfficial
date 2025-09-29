@@ -5,13 +5,13 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
-import EmptyState from '@/components/EmptyState'
-import { 
-  Upload, FileText, CheckCircle, AlertCircle, Lightbulb, 
-  TrendingUp, TrendingDown, Minus, Star, Target, 
-  BookOpen, Clock, Award, BarChart3, Users, Brain,
-  Zap, ArrowUp, ArrowDown, ChevronRight, Trash2, 
-  Calendar, Download, Eye, RefreshCw
+import { logger } from '@/lib/logger'
+import {
+  Upload, FileText, CheckCircle, AlertCircle, Lightbulb,
+  TrendingUp, TrendingDown, Minus, Star, Target,
+  BookOpen, Award, BarChart3, Users, Brain,
+  Zap, ChevronRight, Trash2,
+  Calendar, RefreshCw
 } from 'lucide-react'
 
 interface SkillsIntelligence {
@@ -156,14 +156,14 @@ export default function EnhancedResumeAnalyzer() {
         }
       }
     } catch (error) {
-      console.error('Error loading resume history:', error)
+      logger.error('Failed to load resume history', 'DATABASE', { userId: user?.id, error: error.message })
     } finally {
       setLoadingHistory(false)
     }
   }
 
   const loadAnalysis = (resume: ResumeRecord) => {
-    console.log('Loading analysis for resume:', resume.file_name)
+    logger.info(`Loading analysis for resume: ${resume.file_name}`, 'USER_ACTION', { resumeId: resume.id, fileName: resume.file_name })
     setAnalysis(resume.ai_analysis)
     setSelectedResumeId(resume.id)
     setShowUpload(false)
@@ -193,7 +193,7 @@ export default function EnhancedResumeAnalyzer() {
         setSelectedResumeId(null)
       }
     } catch (error) {
-      console.error('Error deleting resume:', error)
+      logger.error('Failed to delete resume', 'DATABASE', { resumeId, error: error.message })
       setError('Failed to delete resume')
     }
   }
@@ -231,7 +231,7 @@ export default function EnhancedResumeAnalyzer() {
       const data = await response.json()
       return data.text
     } catch (error) {
-      console.error('PDF extraction error:', error)
+      logger.error('PDF text extraction failed', 'API', { error: error.message, fileName: file.name })
       throw new Error('Could not extract text from PDF. Please ensure it\'s a valid PDF file.')
     }
   }
@@ -298,8 +298,8 @@ export default function EnhancedResumeAnalyzer() {
       await loadResumeHistory()
       setSelectedResumeId(savedResume.id)
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze resume')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze resume')
     } finally {
       setUploading(false)
       setAnalyzing(false)
@@ -565,7 +565,7 @@ export default function EnhancedResumeAnalyzer() {
                       ].map(({ key, label, icon: Icon }) => (
                         <button
                           key={key}
-                          onClick={() => setActiveTab(key as any)}
+                          onClick={() => setActiveTab(key as 'skills' | 'gaps' | 'market' | 'career')}
                           className={`py-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
                             activeTab === key
                               ? 'border-blue-500 text-blue-600 dark:text-blue-500'

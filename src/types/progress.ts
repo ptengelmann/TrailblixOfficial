@@ -47,7 +47,7 @@ export interface UserActivity {
   user_id: string
   activity_type: 'resume_updated' | 'skill_learned' | 'job_applied' | 'profile_updated' | 'goal_set' | 'job_saved' | 'job_viewed'
   activity_data: {
-    [key: string]: any
+    [key: string]: unknown
   }
   points_earned: number
   created_at: string

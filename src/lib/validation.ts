@@ -7,8 +7,8 @@ export interface ValidationResult {
 }
 
 export const validators = {
-  email: (email: string): ValidationResult => {
-    if (!email) {
+  email: (email: unknown): ValidationResult => {
+    if (typeof email !== 'string' || !email) {
       return { isValid: false, error: 'Email is required' }
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -18,8 +18,8 @@ export const validators = {
     return { isValid: true }
   },
 
-  password: (password: string): ValidationResult => {
-    if (!password) {
+  password: (password: unknown): ValidationResult => {
+    if (typeof password !== 'string' || !password) {
       return { isValid: false, error: 'Password is required' }
     }
     if (password.length < 8) {
@@ -37,23 +37,26 @@ export const validators = {
     return { isValid: true }
   },
 
-  passwordMatch: (password: string, confirmPassword: string): ValidationResult => {
+  passwordMatch: (password: unknown, confirmPassword: unknown): ValidationResult => {
+    if (typeof password !== 'string' || typeof confirmPassword !== 'string') {
+      return { isValid: false, error: 'Both passwords are required' }
+    }
     if (password !== confirmPassword) {
       return { isValid: false, error: 'Passwords do not match' }
     }
     return { isValid: true }
   },
 
-  required: (value: string, fieldName: string = 'This field'): ValidationResult => {
-    if (!value || value.trim() === '') {
+  required: (value: unknown, fieldName: string = 'This field'): ValidationResult => {
+    if (typeof value !== 'string' || !value || value.trim() === '') {
       return { isValid: false, error: `${fieldName} is required` }
     }
     return { isValid: true }
   },
 
-  url: (url: string): ValidationResult => {
-    if (!url) return { isValid: true } // Optional field
-    
+  url: (url: unknown): ValidationResult => {
+    if (typeof url !== 'string' || !url) return { isValid: true } // Optional field
+
     try {
       new URL(url)
       return { isValid: true }
@@ -84,8 +87,8 @@ export const validators = {
 
 // Utility to validate multiple fields
 export function validateFields(
-  fields: { [key: string]: any },
-  rules: { [key: string]: (value: any) => ValidationResult }
+  fields: { [key: string]: unknown },
+  rules: { [key: string]: (value: unknown) => ValidationResult }
 ): { [key: string]: string } {
   const errors: { [key: string]: string } = {}
   

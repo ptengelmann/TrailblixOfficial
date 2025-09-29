@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { logger } from '@/lib/logger'
 import { 
   Sparkles, Calendar, Target, TrendingUp, Lightbulb, 
   CheckCircle, AlertTriangle, Clock, RefreshCw, 
@@ -91,7 +92,7 @@ export default function CareerCoach() {
       }
 
     } catch (error) {
-      console.error('Error loading user data:', error)
+      logger.error('Failed to load user data for career coach', 'DATABASE', { userId: user?.id, error: error.message })
     } finally {
       setLoading(false)
     }
@@ -128,8 +129,9 @@ export default function CareerCoach() {
       setRecommendations(data)
       setLastGenerated(new Date().toISOString())
       
-    } catch (error: any) {
-      setError(error.message || 'Failed to generate recommendations')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      setError(errorMessage || 'Failed to generate recommendations')
     } finally {
       setGenerating(false)
     }

@@ -1,10 +1,11 @@
 // src/components/ProfileCompletion.tsx - Updated routing
 import { CheckCircle, Circle } from 'lucide-react'
 import Link from 'next/link'
+import { UserProfile, CareerObjectives } from '@/types/api'
 
 interface ProfileCompletionProps {
-  profile: any
-  careerGoals: any
+  profile: UserProfile | null
+  careerGoals: CareerObjectives | null
   hasResume: boolean
 }
 

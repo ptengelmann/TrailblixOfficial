@@ -69,8 +69,8 @@ export default function Settings() {
       showMessage('success', 'Confirmation email sent! Check your new email address.')
       setNewEmail('')
       setEmailPassword('')
-    } catch (error: any) {
-      showMessage('error', error.message || 'Failed to update email')
+    } catch (error: unknown) {
+      showMessage('error', error instanceof Error ? error.message : 'Failed to update email')
     } finally {
       setEmailLoading(false)
     }
@@ -110,8 +110,8 @@ export default function Settings() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-    } catch (error: any) {
-      showMessage('error', error.message || 'Failed to update password')
+    } catch (error: unknown) {
+      showMessage('error', error instanceof Error ? error.message : 'Failed to update password')
     } finally {
       setPasswordLoading(false)
     }
@@ -147,7 +147,7 @@ export default function Settings() {
       URL.revokeObjectURL(url)
 
       showMessage('success', 'Data exported successfully!')
-    } catch (error: any) {
+    } catch (error: unknown) {
       showMessage('error', 'Failed to export data')
     }
   }
@@ -183,8 +183,8 @@ export default function Settings() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to delete account')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete account')
       }
 
       showMessage('success', 'Account deleted. Redirecting...')
@@ -193,8 +193,8 @@ export default function Settings() {
         signOut()
         router.push('/')
       }, 2000)
-    } catch (error: any) {
-      showMessage('error', error.message || 'Failed to delete account')
+    } catch (error: unknown) {
+      showMessage('error', error instanceof Error ? error.message : 'Failed to delete account')
     } finally {
       setDeleteLoading(false)
     }

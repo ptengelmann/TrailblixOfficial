@@ -1,15 +1,14 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useAuth } from '@/contexts/AuthContext'
-import { useState, useEffect, useRef } from 'react'
-import { ChevronDown, Menu, X, Brain, Phone, Info, CreditCard } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Menu, X, Brain, Phone, Info, CreditCard } from 'lucide-react'
 
 interface NavbarProps {
   variant?: 'marketing' | 'app'
 }
 
 export default function Navbar({ variant = 'marketing' }: NavbarProps) {
-  const router = useRouter()
   const { user } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)

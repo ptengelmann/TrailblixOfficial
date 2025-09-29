@@ -4,6 +4,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabase } from '@/lib/supabase'
+import { UserProfile, CareerObjectives } from '@/types/api'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -114,11 +116,11 @@ export default async function handler(
 
     // Save search session for analytics
     if (save_search_session) {
-      console.log('Attempting to save search session...')
+      logger.info('Attempting to save search session', 'API')
       try {
         await saveSearchSession(user.id, filters, finalJobs.length, finalJobs.map(job => job.id))
       } catch (sessionError) {
-        console.error('Failed to save search session, but continuing:', sessionError)
+        logger.error('Failed to save search session, but continuing', 'API', { error: sessionError })
         // Don't fail the whole request if session saving fails
       }
     }
@@ -134,11 +136,13 @@ export default async function handler(
       }
     })
 
-  } catch (error: any) {
-    console.error('Job search error:', error)
-    return res.status(500).json({ 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    logger.error('Job search failed', 'API', { error: errorMessage, stack: errorStack })
+    return res.status(500).json({
       error: 'Failed to search jobs',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     })
   }
 }
@@ -195,7 +199,7 @@ async function searchAdzunaJobs(filters: JobSearchFilters): Promise<AdzunaJob[]>
     }
   }
 
-  console.log(`Searching jobs in country: ${country} for location: ${filters.location}`)
+  logger.info(`Searching jobs in country: ${country} for location: ${filters.location}`, 'SEARCH', { country, location: filters.location })
 
   // Construct Adzuna API URL
   const page = filters.page || 1
@@ -259,7 +263,7 @@ async function searchAdzunaJobs(filters: JobSearchFilters): Promise<AdzunaJob[]>
     return []
   }
 
-  return data.results.map((job: any) => ({
+  return data.results.map((job: Record<string, unknown>) => ({
     id: job.id,
     title: job.title,
     company: job.company,
@@ -277,7 +281,7 @@ async function searchAdzunaJobs(filters: JobSearchFilters): Promise<AdzunaJob[]>
   }))
 }
 
-async function getUserContext(userId: string) {
+async function getUserContext(userId: string): Promise<{ profile: UserProfile | null; objectives: CareerObjectives | null }> {
   try {
     const [profileResult, objectivesResult] = await Promise.all([
       supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
@@ -288,13 +292,14 @@ async function getUserContext(userId: string) {
       profile: profileResult.data,
       objectives: objectivesResult.data
     }
-  } catch (error) {
-    console.error('Error fetching user context:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to fetch user context', 'DATABASE', { userId, error: errorMessage })
     return { profile: null, objectives: null }
   }
 }
 
-async function enhanceJobsWithAI(jobs: AdzunaJob[], userContext: any): Promise<EnhancedJob[]> {
+async function enhanceJobsWithAI(jobs: AdzunaJob[], userContext: { profile: UserProfile | null; objectives: CareerObjectives | null }): Promise<EnhancedJob[]> {
   if (!userContext.objectives || jobs.length === 0) {
     return jobs.map(job => enhanceJobMetadata(job))
   }
@@ -326,7 +331,7 @@ async function enhanceJobsWithAI(jobs: AdzunaJob[], userContext: any): Promise<E
       }
     }
   } catch (error) {
-    console.error('AI enhancement error:', error)
+    logger.error('AI job enhancement failed', 'AI', { error: error.message, jobCount: jobs.length })
   }
 
   // Fallback: return jobs with basic enhancements
@@ -393,7 +398,7 @@ async function addUserInteractionData(jobs: EnhancedJob[], userId: string): Prom
       is_viewed: interactionMap.get(job.id)?.has('viewed') || false
     }))
   } catch (error) {
-    console.error('Error adding user interaction data:', error)
+    logger.error('Failed to add user interaction data', 'DATABASE', { userId, jobCount: jobs.length, error: error.message })
     return jobs
   }
 }
@@ -405,7 +410,7 @@ async function saveSearchSession(
   jobIds: string[]
 ) {
   try {
-    console.log('Saving search session for user:', userId)
+    logger.info(`Saving search session for user: ${userId}`, 'DATABASE', { userId, resultsCount, filtersApplied: Object.keys(filters).length })
     
     const { data, error } = await supabase.from('job_search_sessions').insert({
       user_id: userId,
@@ -417,17 +422,17 @@ async function saveSearchSession(
     }).select().single()
 
     if (error) {
-      console.error('Error saving search session:', error)
+      logger.error('Failed to save search session', 'DATABASE', { userId, error: error.message })
       return
     }
 
-    console.log('Search session saved successfully:', data.id)
+    logger.info(`Search session saved successfully: ${data.id}`, 'DATABASE', { sessionId: data.id, userId })
   } catch (error) {
-    console.error('Error saving search session:', error)
+    logger.error('Search session save failed unexpectedly', 'DATABASE', { userId, error: error.message })
   }
 }
 
-function createJobMatchingPrompt(jobs: AdzunaJob[], userContext: any): string {
+function createJobMatchingPrompt(jobs: AdzunaJob[], userContext: { profile: UserProfile | null; objectives: CareerObjectives | null }): string {
   const { profile, objectives } = userContext
   
   return `You are an expert career coach analyzing job matches for a candidate. 

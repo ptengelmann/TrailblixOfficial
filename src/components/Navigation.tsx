@@ -1,11 +1,10 @@
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
-  LayoutDashboard, 
-  User, 
-  FileText, 
-  Target,
+import {
+  LayoutDashboard,
+  User,
+  FileText,
   LogOut,
   Menu,
   X,

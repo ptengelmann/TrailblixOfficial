@@ -3,18 +3,27 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import { ProgressCalculator } from '@/lib/progressCalculations'
 import { WeeklyProgress, CareerMilestone, ProgressSummary } from '@/types/progress'
+import { ApiResponse, CareerObjectives, UserProfile } from '@/types/api'
 import Anthropic from '@anthropic-ai/sdk'
+import { logger } from '@/lib/logger'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
 interface ProgressRequest {
-  action: 'get_summary' | 'update_milestone' | 'track_activity' | 'generate_insights'
+  action: 'get_summary' | 'update_milestone' | 'track_activity' | 'generate_insights' | 'get_daily_progress' | 'complete_daily_task'
   milestone_id?: string
   milestone_updates?: Partial<CareerMilestone>
   activity_type?: string
-  activity_data?: any
+  activity_data?: Record<string, unknown>
+  task_data?: {
+    task_id: string
+    task_type: string
+    points_earned: number
+    streak_eligible: boolean
+  }
 }
 
 export default async function handler(
@@ -65,18 +74,26 @@ export default async function handler(
         
       case 'generate_insights':
         return await generateWeeklyInsights(res, userSupabase, user.id)
-      
+
+      case 'get_daily_progress':
+        return await getDailyProgress(res, userSupabase, user.id)
+
+      case 'complete_daily_task':
+        return await completeDailyTask(res, userSupabase, user.id, requestData)
+
       default:
         return res.status(400).json({ error: 'Invalid action' })
     }
 
-  } catch (error: any) {
-    console.error('Progress tracking error:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    logger.error('Progress tracking operation failed', 'API', { error: errorMessage, stack: errorStack })
     return res.status(500).json({ error: 'Failed to process request' })
   }
 }
 
-async function getProgressSummary(res: NextApiResponse, userSupabase: any, userId: string) {
+async function getProgressSummary(res: NextApiResponse, userSupabase: SupabaseClient, userId: string) {
   try {
     // Get current week's start date (Monday)
     const now = new Date()
@@ -134,15 +151,15 @@ async function getProgressSummary(res: NextApiResponse, userSupabase: any, userI
     ])
 
     // Calculate current week data if not exists
-    let currentWeek = weeklyProgress.data?.find((w: any) => w.week_start === weekStart)
+    let currentWeek = weeklyProgress.data?.find((w: WeeklyProgress) => w.week_start === weekStart)
     
     if (!currentWeek) {
       // Create current week progress from job interactions
       const thisWeekJobs = jobInteractions.data || []
       const weeklyData = {
-        applications_count: thisWeekJobs.filter((j: any) => j.interaction_type === 'applied').length,
-        jobs_viewed: thisWeekJobs.filter((j: any) => j.interaction_type === 'viewed').length,
-        jobs_saved: thisWeekJobs.filter((j: any) => j.interaction_type === 'saved').length,
+        applications_count: thisWeekJobs.filter((j: { interaction_type: string }) => j.interaction_type === 'applied').length,
+        jobs_viewed: thisWeekJobs.filter((j: { interaction_type: string }) => j.interaction_type === 'viewed').length,
+        jobs_saved: thisWeekJobs.filter((j: { interaction_type: string }) => j.interaction_type === 'saved').length,
         resume_updates: 0, // Would need to track this separately
         skill_progress_updates: 0, // Would need to track this separately
         networking_activities: 0, // Would need to track this separately
@@ -214,16 +231,17 @@ async function getProgressSummary(res: NextApiResponse, userSupabase: any, userI
 
     return res.status(200).json({ success: true, data: summary })
 
-  } catch (error: any) {
-    console.error('Error getting progress summary:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to get progress summary', 'DATABASE', { userId, error: errorMessage })
     return res.status(500).json({ error: 'Failed to get progress summary' })
   }
 }
 
 async function updateMilestone(
-  res: NextApiResponse, 
-  userSupabase: any, 
-  userId: string, 
+  res: NextApiResponse,
+  userSupabase: SupabaseClient,
+  userId: string,
   requestData: ProgressRequest
 ) {
   try {
@@ -253,16 +271,17 @@ async function updateMilestone(
 
     return res.status(200).json({ success: true, milestone: data })
 
-  } catch (error: any) {
-    console.error('Error updating milestone:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to update milestone', 'DATABASE', { userId, milestone_id: requestData.milestone_id, error: errorMessage })
     return res.status(500).json({ error: 'Failed to update milestone' })
   }
 }
 
 async function trackActivity(
-  res: NextApiResponse, 
-  userSupabase: any, 
-  userId: string, 
+  res: NextApiResponse,
+  userSupabase: SupabaseClient,
+  userId: string,
   requestData: ProgressRequest
 ) {
   try {
@@ -288,17 +307,18 @@ async function trackActivity(
 
     return res.status(200).json({ success: true })
 
-  } catch (error: any) {
-    console.error('Error tracking activity:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to track user activity', 'DATABASE', { userId, activity_type: requestData.activity_type, error: errorMessage })
     return res.status(500).json({ error: 'Failed to track activity' })
   }
 }
 
 // New helper function to update milestone progress
 async function updateMilestoneProgress(
-  userSupabase: any, 
-  userId: string, 
-  milestoneType: string, 
+  userSupabase: SupabaseClient,
+  userId: string,
+  milestoneType: string,
   incrementBy: number
 ) {
   try {
@@ -314,7 +334,7 @@ async function updateMilestoneProgress(
       .single()
 
     if (findError || !milestone) {
-      console.log(`No active ${milestoneType} milestone found for user ${userId}`)
+      logger.info(`No active ${milestoneType} milestone found for user ${userId}`, 'DATABASE', { userId, milestoneType })
       return
     }
 
@@ -329,18 +349,18 @@ async function updateMilestoneProgress(
       .eq('id', milestone.id)
 
     if (updateError) {
-      console.error('Error updating milestone progress:', updateError)
+      logger.error('Failed to update milestone progress', 'DATABASE', { userId, milestoneType, error: updateError.message })
     } else {
-      console.log(`Updated ${milestoneType} milestone: ${milestone.current_value} → ${newCurrentValue}`)
+      logger.info(`Updated ${milestoneType} milestone: ${milestone.current_value} → ${newCurrentValue}`, 'DATABASE', { userId, milestoneType, oldValue: milestone.current_value, newValue: newCurrentValue })
     }
 
   } catch (error) {
-    console.error('Error in updateMilestoneProgress:', error)
+    logger.error('updateMilestoneProgress operation failed', 'DATABASE', { userId, milestoneType, error: error.message })
   }
 }
 
 // New helper function to recalculate weekly progress
-async function recalculateWeeklyProgress(userSupabase: any, userId: string) {
+async function recalculateWeeklyProgress(userSupabase: SupabaseClient, userId: string) {
   try {
     // Get current week's start date (Monday)
     const now = new Date()
@@ -374,15 +394,15 @@ async function recalculateWeeklyProgress(userSupabase: any, userId: string) {
     // Calculate weekly data from activities
     const thisWeekJobs = jobInteractions.data || []
     const thisWeekActivities = userActivities.data || []
-    
+
     const weeklyData = {
-      applications_count: thisWeekJobs.filter((j: any) => j.interaction_type === 'applied').length,
-      jobs_viewed: thisWeekJobs.filter((j: any) => j.interaction_type === 'viewed').length,
-      jobs_saved: thisWeekJobs.filter((j: any) => j.interaction_type === 'saved').length,
-      resume_updates: thisWeekActivities.filter((a: any) => a.activity_type === 'resume_updated').length,
-      skill_progress_updates: thisWeekActivities.filter((a: any) => a.activity_type === 'skill_learned').length,
-      networking_activities: thisWeekActivities.filter((a: any) => a.activity_type === 'networking_activity').length,
-      interview_count: thisWeekActivities.filter((a: any) => a.activity_type === 'job_interview').length || 0
+      applications_count: thisWeekJobs.filter((j: { interaction_type: string }) => j.interaction_type === 'applied').length,
+      jobs_viewed: thisWeekJobs.filter((j: { interaction_type: string }) => j.interaction_type === 'viewed').length,
+      jobs_saved: thisWeekJobs.filter((j: { interaction_type: string }) => j.interaction_type === 'saved').length,
+      resume_updates: thisWeekActivities.filter((a: { activity_type: string }) => a.activity_type === 'resume_updated').length,
+      skill_progress_updates: thisWeekActivities.filter((a: { activity_type: string }) => a.activity_type === 'skill_learned').length,
+      networking_activities: thisWeekActivities.filter((a: { activity_type: string }) => a.activity_type === 'networking_activity').length,
+      interview_count: thisWeekActivities.filter((a: { activity_type: string }) => a.activity_type === 'job_interview').length || 0
     }
 
     const momentumScore = ProgressCalculator.calculateMomentumScore(weeklyData)
@@ -403,21 +423,21 @@ async function recalculateWeeklyProgress(userSupabase: any, userId: string) {
       })
 
     if (error) {
-      console.error('Error updating weekly progress:', error)
+      logger.error('Failed to update weekly progress', 'DATABASE', { userId, weekStart, error: error.message })
     } else {
-      console.log('Weekly progress recalculated:', weeklyData)
+      logger.info('Weekly progress recalculated successfully', 'DATABASE', { userId, weekStart, weeklyData })
     }
 
   } catch (error) {
-    console.error('Error in recalculateWeeklyProgress:', error)
+    logger.error('recalculateWeeklyProgress operation failed', 'DATABASE', { userId, error: error.message })
   }
 }
 
 async function trackUserActivity(
-  userSupabase: any, 
-  userId: string, 
-  activityType: string, 
-  activityData?: any
+  userSupabase: SupabaseClient,
+  userId: string,
+  activityType: string,
+  activityData?: Record<string, unknown>
 ) {
   // Calculate points based on activity type
   const pointsMap: { [key: string]: number } = {
@@ -444,7 +464,7 @@ async function trackUserActivity(
     })
 }
 
-async function getBenchmarkData(userSupabase: any, careerObjectives: any) {
+async function getBenchmarkData(userSupabase: SupabaseClient, careerObjectives: CareerObjectives) {
   const { data } = await userSupabase
     .from('career_benchmarks')
     .select('*')
@@ -455,7 +475,7 @@ async function getBenchmarkData(userSupabase: any, careerObjectives: any) {
   return data
 }
 
-function calculateBenchmarkComparison(currentWeek: any, benchmark: any) {
+function calculateBenchmarkComparison(currentWeek: WeeklyProgress, benchmark: { avg_applications_per_week: number; avg_response_rate: number; avg_interview_rate: number } | null) {
   if (!benchmark) {
     return {
       your_performance: {
@@ -495,13 +515,148 @@ function calculateBenchmarkComparison(currentWeek: any, benchmark: any) {
   }
 }
 
-async function generateWeeklyInsights(res: NextApiResponse, userSupabase: any, userId: string) {
+async function generateWeeklyInsights(res: NextApiResponse, userSupabase: SupabaseClient, userId: string) {
   try {
     // This would be called by a cron job to generate AI insights for the week
     // For now, return success - will implement AI generation later
     return res.status(200).json({ success: true, message: 'Insights generated' })
-  } catch (error: any) {
-    console.error('Error generating insights:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to generate weekly insights', 'AI', { userId, error: errorMessage })
     return res.status(500).json({ error: 'Failed to generate insights' })
+  }
+}
+
+// Get daily progress including streaks and gamification data
+async function getDailyProgress(res: NextApiResponse, userSupabase: SupabaseClient, userId: string) {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    // Get user's points and level data
+    const { data: pointsData } = await userSupabase
+      .from('user_activities')
+      .select('activity_data')
+      .eq('user_id', userId)
+      .eq('activity_type', 'daily_task_completed')
+
+    // Calculate total points
+    const totalPoints = pointsData?.reduce((sum: number, activity: { activity_data?: { points_earned?: number } }) => {
+      return sum + (activity.activity_data?.points_earned || 0)
+    }, 0) || 0
+
+    // Get streak data - consecutive days with completed tasks
+    const { data: dailyCompletions } = await userSupabase
+      .from('user_activities')
+      .select('created_at')
+      .eq('user_id', userId)
+      .eq('activity_type', 'daily_task_completed')
+      .gte('created_at', weekAgo)
+      .order('created_at', { ascending: false })
+
+    // Calculate current streak
+    let currentStreak = 0
+    const completionDates = new Set()
+
+    dailyCompletions?.forEach((completion: { created_at: string }) => {
+      const date = completion.created_at.split('T')[0]
+      completionDates.add(date)
+    })
+
+    // Count consecutive days from today backwards
+    const currentDate = new Date()
+    while (currentDate >= new Date(weekAgo)) {
+      const dateStr = currentDate.toISOString().split('T')[0]
+      if (completionDates.has(dateStr)) {
+        currentStreak++
+        currentDate.setDate(currentDate.getDate() - 1)
+      } else {
+        break
+      }
+    }
+
+    // Get today's completed tasks count
+    const { data: todayTasks } = await userSupabase
+      .from('user_activities')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('activity_type', 'daily_task_completed')
+      .gte('created_at', today)
+
+    const tasksCompletedToday = todayTasks?.length || 0
+
+    // Calculate level (100 points per level)
+    const level = Math.floor(totalPoints / 100) + 1
+
+    // Get longest streak (would need to implement proper calculation)
+    const longestStreak = Math.max(currentStreak, 7) // Placeholder
+
+    const streaks = {
+      current_streak: currentStreak,
+      longest_streak: longestStreak,
+      total_points: totalPoints,
+      level: level,
+      tasks_completed_today: tasksCompletedToday,
+      weekly_goal: 21, // 3 tasks per day * 7 days
+      weekly_progress: Math.min((tasksCompletedToday * 7) / 21 * 100, 100)
+    }
+
+    return res.status(200).json({ success: true, streaks })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to get daily progress', 'DATABASE', { userId, error: errorMessage })
+    return res.status(500).json({ error: 'Failed to get daily progress' })
+  }
+}
+
+// Complete a daily task and update streaks/points
+async function completeDailyTask(res: NextApiResponse, userSupabase: SupabaseClient, userId: string, requestData: ProgressRequest) {
+  try {
+    const { task_data } = requestData
+    if (!task_data) {
+      return res.status(400).json({ error: 'Task data required' })
+    }
+
+    // Record the task completion
+    const { error: insertError } = await userSupabase
+      .from('user_activities')
+      .insert({
+        user_id: userId,
+        activity_type: 'daily_task_completed',
+        activity_data: {
+          task_id: task_data.task_id,
+          task_type: task_data.task_type,
+          points_earned: task_data.points_earned,
+          streak_eligible: task_data.streak_eligible
+        }
+      })
+
+    if (insertError) {
+      throw insertError
+    }
+
+    // Update milestone progress based on task type
+    const milestoneMapping = {
+      'job_search': 'application_goal',
+      'networking': 'networking',
+      'application': 'application_goal',
+      'skill_building': 'skill_development'
+    }
+
+    const milestoneType = milestoneMapping[task_data.task_type as keyof typeof milestoneMapping]
+    if (milestoneType) {
+      await updateMilestoneProgress(userSupabase, userId, milestoneType, 1)
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Task completed successfully',
+      points_earned: task_data.points_earned
+    })
+
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to complete daily task', 'DATABASE', { userId, task_data: requestData.task_data, error: errorMessage })
+    return res.status(500).json({ error: 'Failed to complete task' })
   }
 }

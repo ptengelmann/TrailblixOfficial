@@ -14,7 +14,7 @@ export default function Custom404() {
             Page Not Found
           </h2>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-            Sorry, we couldn't find the page you're looking for.
+            Sorry, we couldn&apos;t find the page you&apos;re looking for.
           </p>
         </div>
 

@@ -53,9 +53,10 @@ export default function SignUp() {
       setPassword('')
       setConfirmPassword('')
       setAgreedToTerms(false)
-    } catch (error: any) {
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       setErrors({ 
-        general: error.message || 'Failed to create account. Please try again.' 
+        general: errorMessage || 'Failed to create account. Please try again.' 
       })
     } finally {
       setLoading(false)
@@ -73,7 +74,7 @@ export default function SignUp() {
             Check your email
           </h2>
           <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
-            We've sent you a verification link. Please check your email to confirm your account and start your career intelligence analysis.
+            We&apos;ve sent you a verification link. Please check your email to confirm your account and start your career intelligence analysis.
           </p>
           <Link
             href="/auth/login"

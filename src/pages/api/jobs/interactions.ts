@@ -3,7 +3,10 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { JobInteraction, UserProfile, CareerObjectives } from '@/types/api'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -12,7 +15,7 @@ const anthropic = new Anthropic({
 interface JobInteractionRequest {
   action: 'create' | 'update' | 'delete' | 'list'
   job_id?: string
-  job_data?: any
+  job_data?: Record<string, unknown>
   interaction_type?: 'viewed' | 'saved' | 'applied' | 'dismissed'
   notes?: string
   generate_ai_analysis?: boolean
@@ -55,14 +58,14 @@ export default async function handler(
     // Verify the user and get their ID
     const { data: { user }, error: authError } = await userSupabase.auth.getUser()
     if (authError || !user) {
-      console.error('Authentication error:', authError)
+      logger.error('Authentication failed in job interactions API', 'AUTH', { error: authError?.message })
       return res.status(401).json({ error: 'Invalid authentication' })
     }
 
     const requestData = req.body as JobInteractionRequest
     const { action } = requestData
 
-    console.log('Job interactions API called with action:', action, 'by user:', user.id)
+    logger.info(`Job interactions API called with action: ${action} by user: ${user.id}`, 'API', { action, userId: user.id })
 
     switch (action) {
       case 'create':
@@ -81,18 +84,20 @@ export default async function handler(
         return res.status(400).json({ error: 'Invalid action' })
     }
 
-  } catch (error: any) {
-    console.error('Job interaction handler error:', error)
-    return res.status(500).json({ 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    logger.error('Job interaction handler failed', 'API', { error: errorMessage, stack: errorStack })
+    return res.status(500).json({
       error: 'Failed to process job interaction',
-      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      details: process.env.NODE_ENV === 'development' ? errorMessage : 'Internal server error'
     })
   }
 }
 
 async function createInteraction(
   res: NextApiResponse,
-  userSupabase: any, // User-scoped Supabase client
+  userSupabase: SupabaseClient, // User-scoped Supabase client
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -103,7 +108,7 @@ async function createInteraction(
       return res.status(400).json({ error: 'Missing required fields: job_id, job_data, interaction_type' })
     }
 
-    console.log('Creating interaction:', { userId, job_id, interaction_type })
+    logger.info(`Creating ${interaction_type} interaction for job ${job_id}`, 'DATABASE', { userId, job_id, interaction_type })
 
     // Check if interaction already exists (using user-scoped client)
     const { data: existing, error: checkError } = await userSupabase
@@ -115,7 +120,7 @@ async function createInteraction(
       .maybeSingle()
 
     if (checkError) {
-      console.error('Error checking existing interaction:', checkError)
+      logger.error('Failed to check existing interaction', 'DATABASE', { userId, job_id, error: checkError.message })
       return res.status(500).json({ error: 'Database error checking existing interaction' })
     }
 
@@ -136,7 +141,7 @@ async function createInteraction(
           matchAnalysis = analysis.analysis
         }
       } catch (error) {
-        console.error('AI analysis error:', error)
+        logger.error('AI job analysis failed', 'AI', { userId, job_id, error: error.message })
         // Continue without AI analysis
       }
     }
@@ -157,7 +162,7 @@ async function createInteraction(
       .single()
 
     if (error) {
-      console.error('Error creating interaction:', error)
+      logger.error('Failed to create job interaction', 'DATABASE', { userId, job_id, interaction_type, error: error.message })
       return res.status(500).json({ error: 'Failed to create interaction', details: error.message })
     }
 
@@ -170,18 +175,19 @@ async function createInteraction(
       } : null
     })
 
-  } catch (error: any) {
-    console.error('Create interaction error:', error)
-    return res.status(500).json({ 
-      error: 'Failed to create interaction', 
-      details: error.message 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Create interaction operation failed', 'API', { userId, error: errorMessage })
+    return res.status(500).json({
+      error: 'Failed to create interaction',
+      details: errorMessage
     })
   }
 }
 
 async function updateInteraction(
   res: NextApiResponse,
-  userSupabase: any,
+  userSupabase: SupabaseClient,
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -192,7 +198,7 @@ async function updateInteraction(
       return res.status(400).json({ error: 'Missing required field: job_id' })
     }
 
-    const updateData: any = {}
+    const updateData: Partial<JobInteraction> = {}
     if (interaction_type) updateData.interaction_type = interaction_type
     if (notes !== undefined) updateData.notes = notes
 
@@ -205,7 +211,7 @@ async function updateInteraction(
       .single()
 
     if (error) {
-      console.error('Error updating interaction:', error)
+      logger.error('Failed to update job interaction', 'DATABASE', { userId, job_id, error: error.message })
       return res.status(500).json({ error: 'Failed to update interaction', details: error.message })
     }
 
@@ -214,18 +220,19 @@ async function updateInteraction(
       interaction: data
     })
 
-  } catch (error: any) {
-    console.error('Update interaction error:', error)
-    return res.status(500).json({ 
-      error: 'Failed to update interaction', 
-      details: error.message 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Update interaction operation failed', 'API', { userId, error: errorMessage })
+    return res.status(500).json({
+      error: 'Failed to update interaction',
+      details: errorMessage
     })
   }
 }
 
 async function deleteInteraction(
   res: NextApiResponse,
-  userSupabase: any,
+  userSupabase: SupabaseClient,
   userId: string,
   requestData: JobInteractionRequest
 ) {
@@ -249,7 +256,7 @@ async function deleteInteraction(
     const { error } = await query
 
     if (error) {
-      console.error('Error deleting interaction:', error)
+      logger.error('Failed to delete job interaction', 'DATABASE', { userId, job_id, error: error.message })
       return res.status(500).json({ error: 'Failed to delete interaction', details: error.message })
     }
 
@@ -258,23 +265,24 @@ async function deleteInteraction(
       message: 'Interaction deleted successfully'
     })
 
-  } catch (error: any) {
-    console.error('Delete interaction error:', error)
-    return res.status(500).json({ 
-      error: 'Failed to delete interaction', 
-      details: error.message 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Delete interaction operation failed', 'API', { userId, error: errorMessage })
+    return res.status(500).json({
+      error: 'Failed to delete interaction',
+      details: errorMessage
     })
   }
 }
 
 async function listInteractions(
   res: NextApiResponse,
-  userSupabase: any,
+  userSupabase: SupabaseClient,
   userId: string,
   requestData: JobInteractionRequest
 ) {
   try {
-    console.log('Listing interactions for user:', userId, 'with params:', requestData)
+    logger.info(`Listing interactions for user: ${userId}`, 'DATABASE', { userId, params: { interaction_type, limit, offset, include_ai_analysis } })
 
     const { 
       interaction_type,
@@ -314,37 +322,37 @@ async function listInteractions(
       query = query.eq('interaction_type', interaction_type)
     }
 
-    console.log('Executing query for interactions...')
+    logger.debug('Executing query for job interactions', 'DATABASE')
     const { data: interactions, error, count } = await query
 
     if (error) {
-      console.error('Error fetching interactions:', error)
+      logger.error('Failed to fetch job interactions', 'DATABASE', { userId, error: error.message })
       return res.status(500).json({ error: 'Failed to fetch interactions', details: error.message })
     }
 
-    console.log('Found', interactions?.length || 0, 'interactions')
+    logger.info(`Found ${interactions?.length || 0} job interactions`, 'DATABASE', { userId, count: interactions?.length || 0 })
 
     // Get summary stats
-    console.log('Fetching summary stats...')
+    logger.debug('Fetching interaction summary stats', 'DATABASE', { userId })
     const { data: stats, error: statsError } = await userSupabase
       .from('job_interactions')
       .select('interaction_type')
       .eq('user_id', userId)
 
     if (statsError) {
-      console.error('Error fetching stats:', statsError)
+      logger.error('Failed to fetch interaction stats', 'DATABASE', { userId, error: statsError.message })
       // Continue without stats rather than failing
     }
 
     const summary = {
       total_interactions: stats?.length || 0,
-      saved_jobs: stats?.filter((s: any) => s.interaction_type === 'saved').length || 0,
-      applied_jobs: stats?.filter((s: any) => s.interaction_type === 'applied').length || 0,
-      viewed_jobs: stats?.filter((s: any) => s.interaction_type === 'viewed').length || 0,
-      dismissed_jobs: stats?.filter((s: any) => s.interaction_type === 'dismissed').length || 0
+      saved_jobs: stats?.filter((s: { interaction_type: string }) => s.interaction_type === 'saved').length || 0,
+      applied_jobs: stats?.filter((s: { interaction_type: string }) => s.interaction_type === 'applied').length || 0,
+      viewed_jobs: stats?.filter((s: { interaction_type: string }) => s.interaction_type === 'viewed').length || 0,
+      dismissed_jobs: stats?.filter((s: { interaction_type: string }) => s.interaction_type === 'dismissed').length || 0
     }
 
-    console.log('Returning interactions and summary:', summary)
+    logger.info('Returning job interactions and summary', 'API', { userId, summary })
 
     return res.status(200).json({
       success: true,
@@ -357,16 +365,17 @@ async function listInteractions(
       }
     })
 
-  } catch (error: any) {
-    console.error('List interactions error:', error)
-    return res.status(500).json({ 
-      error: 'Failed to fetch interactions', 
-      details: error.message 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('List interactions operation failed', 'API', { userId, error: errorMessage })
+    return res.status(500).json({
+      error: 'Failed to fetch interactions',
+      details: errorMessage
     })
   }
 }
 
-async function getUserContext(userSupabase: any, userId: string) {
+async function getUserContext(userSupabase: SupabaseClient, userId: string): Promise<{ profile: UserProfile | null; objectives: CareerObjectives | null }> {
   try {
     const [profileResult, objectivesResult] = await Promise.all([
       userSupabase.from('user_profiles').select('*').eq('user_id', userId).single(),
@@ -378,12 +387,12 @@ async function getUserContext(userSupabase: any, userId: string) {
       objectives: objectivesResult.data
     }
   } catch (error) {
-    console.error('Error fetching user context:', error)
+    logger.error('Failed to fetch user context for AI analysis', 'DATABASE', { userId, error: error.message })
     return { profile: null, objectives: null }
   }
 }
 
-async function generateJobMatchAnalysis(jobData: any, userContext: any) {
+async function generateJobMatchAnalysis(jobData: Record<string, unknown>, userContext: { profile: UserProfile | null; objectives: CareerObjectives | null }) {
   const prompt = `You are an expert career coach analyzing why a specific job matches a candidate's profile.
 
 CANDIDATE PROFILE:

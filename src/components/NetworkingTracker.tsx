@@ -1,14 +1,30 @@
-// src/components/NetworkingTracker.tsx
+// Enhanced NetworkingTracker with goals and insights
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { Users, MessageCircle, Coffee, Briefcase, Plus, CheckCircle, Calendar, Trash2 } from 'lucide-react'
+import { logger } from '@/lib/logger'
+import {
+  Users, MessageCircle, Coffee, Briefcase, Plus, CheckCircle,
+  Calendar
+} from 'lucide-react'
 
 interface NetworkingActivity {
   id: string
   type: string
   description: string
   count: number
+  created_at: string
+}
+
+interface UserActivityData {
+  id: string
+  user_id: string
+  activity_type: string
+  activity_data: {
+    networking_type?: string
+    description?: string
+    count?: number
+  }
   created_at: string
 }
 
@@ -53,7 +69,7 @@ export default function NetworkingTracker() {
 
       if (error) throw error
 
-      const formattedActivities = (data || []).map((activity: any) => ({
+      const formattedActivities = (data || []).map((activity: UserActivityData) => ({
         id: activity.id,
         type: activity.activity_data?.networking_type || 'other',
         description: activity.activity_data?.description || 'Networking activity',
@@ -63,7 +79,7 @@ export default function NetworkingTracker() {
 
       setActivities(formattedActivities)
     } catch (error) {
-      console.error('Error loading activities:', error)
+      logger.error('Failed to load networking activities', 'DATABASE', { userId: user?.id, error: error.message, component: 'NetworkingTracker' })
     } finally {
       setLoading(false)
     }
@@ -114,7 +130,7 @@ export default function NetworkingTracker() {
         setShowAddForm(false)
       }
     } catch (error) {
-      console.error('Error adding activity:', error)
+      logger.error('Failed to add networking activity', 'DATABASE', { userId: user?.id, error: error.message, component: 'NetworkingTracker' })
     } finally {
       setSaving(false)
     }

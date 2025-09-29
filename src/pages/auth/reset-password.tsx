@@ -31,10 +31,11 @@ export default function ResetPassword() {
         text: 'Password reset link sent! Check your email.' 
       })
       setEmail('')
-    } catch (error: any) {
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       setMessage({ 
         type: 'error', 
-        text: error.message || 'Failed to send reset link. Please try again.' 
+        text: errorMessage || 'Failed to send reset link. Please try again.' 
       })
     } finally {
       setLoading(false)
@@ -84,7 +85,7 @@ export default function ResetPassword() {
                 />
               </div>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                We'll send you a secure link to reset your password
+                We&apos;ll send you a secure link to reset your password
               </p>
             </div>
 

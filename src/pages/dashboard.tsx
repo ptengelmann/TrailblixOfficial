@@ -10,6 +10,10 @@ import LoadingSkeleton from '@/components/LoadingSkeleton'
 import EmptyState from '@/components/EmptyState'
 import ProgressWidgets from '@/components/dashboard/ProgressWidgets'
 import NetworkingTracker from '@/components/NetworkingTracker'
+import DailyTasks from '@/components/dashboard/DailyTasks'
+import ActivityFeed from '@/components/dashboard/ActivityFeed'
+import CareerInsights from '@/components/dashboard/CareerInsights'
+import { logger } from '@/lib/logger'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
@@ -53,7 +57,7 @@ export default function Dashboard() {
         setProfile(data)
       }
     } catch (error) {
-      console.error('Error loading profile:', error)
+      logger.error('Failed to load user profile', 'DATABASE', { userId: user?.id, error: error.message })
     } finally {
       setProfileLoading(false)
     }
@@ -71,7 +75,7 @@ export default function Dashboard() {
         setCareerGoals(data)
       }
     } catch (error) {
-      console.error('Error loading career goals:', error)
+      logger.error('Failed to load career goals', 'DATABASE', { userId: user?.id, error: error.message })
     }
   }
 
@@ -85,7 +89,7 @@ export default function Dashboard() {
 
       setHasResume(!!data && data.length > 0)
     } catch (error) {
-      console.error('Error checking resume:', error)
+      logger.error('Failed to check resume status', 'DATABASE', { userId: user?.id, error: error.message })
     }
   }
 
@@ -116,7 +120,7 @@ export default function Dashboard() {
         }
       }
     } catch (error) {
-      console.error('Error loading resume data:', error)
+      logger.error('Failed to load resume data', 'DATABASE', { userId: user?.id, error: error.message })
     }
   }
 
@@ -167,11 +171,11 @@ export default function Dashboard() {
         }
       }
     } catch (error) {
-      console.error('Error initializing progress tracking:', error)
+      logger.error('Failed to initialize progress tracking', 'DATABASE', { userId: user?.id, error: error.message })
     }
   }
 
-  const createDefaultMilestones = async (careerObjectives: any) => {
+  const createDefaultMilestones = async (careerObjectives: Record<string, unknown>) => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -226,7 +230,7 @@ export default function Dashboard() {
       })
 
     } catch (error) {
-      console.error('Error creating default milestones:', error)
+      logger.error('Failed to create default milestones', 'DATABASE', { userId: user?.id, error: error.message })
     }
   }
 
@@ -244,7 +248,7 @@ export default function Dashboard() {
         setHasCompletedOnboarding(true)
       }
     } catch (error) {
-      console.error('Error checking onboarding:', error)
+      logger.error('Failed to check onboarding status', 'DATABASE', { userId: user?.id, error: error.message })
       setHasCompletedOnboarding(false)
     }
   }
@@ -304,6 +308,13 @@ export default function Dashboard() {
 
         {/* Main Content Area */}
         <div className={`${showProgressTracking && isSetupComplete ? 'xl:col-span-3' : 'xl:col-span-4'}`}>
+          {/* Daily Tasks - Show when setup is complete */}
+          {isSetupComplete && (
+            <div className="mb-8">
+              <DailyTasks />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Setup Progress - Hide when complete and progress tracking is enabled */}
             {!(showProgressTracking && isSetupComplete) && (
@@ -447,14 +458,26 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Networking Tracker */}
-          <div className="mb-8">
-            <NetworkingTracker />
+          {/* Networking and Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div>
+              <NetworkingTracker />
+            </div>
+            <div>
+              <ActivityFeed />
+            </div>
           </div>
+
+          {/* Career Insights */}
+          {isSetupComplete && (
+            <div className="mb-8">
+              <CareerInsights />
+            </div>
+          )}
 
           {/* Next Steps */}
           <div className="mb-8">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">What's Next</h3>
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">What&apos;s Next</h3>
             
             {completedSteps === totalSteps ? (
               <div className="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-6">

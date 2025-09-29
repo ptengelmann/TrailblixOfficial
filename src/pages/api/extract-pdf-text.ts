@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import formidable from 'formidable'
 import pdf from 'pdf-parse'
 import fs from 'fs'
+import { logger } from '@/lib/logger'
 
 export const config = {
   api: {
@@ -31,8 +32,9 @@ export default async function handler(
     const data = await pdf(dataBuffer)
     
     return res.status(200).json({ text: data.text })
-  } catch (error: any) {
-    console.error('Error extracting text:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to extract PDF text', 'API', { error: errorMessage, fileName: files.file?.originalFilename })
     return res.status(500).json({ error: 'Failed to extract text from PDF' })
   }
 }

@@ -3,6 +3,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 
 // Use service role key for admin operations
 const supabase = createClient(
@@ -66,8 +67,9 @@ export default async function handler(
     }
 
     return res.status(200).json({ message: 'Account deleted successfully' })
-  } catch (error: any) {
-    console.error('Error deleting account:', error)
-    return res.status(500).json({ error: 'Failed to delete account', details: error.message })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to delete user account', 'API', { userId: user.id, error: errorMessage })
+    return res.status(500).json({ error: 'Failed to delete account', details: errorMessage })
   }
 }

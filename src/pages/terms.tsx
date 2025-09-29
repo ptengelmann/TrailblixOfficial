@@ -103,7 +103,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">9. Changes to Terms</h2>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                We reserve the right to modify these terms at any time. We will notify users of any changes by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the new terms.
+                We reserve the right to modify these terms at any time. We will notify users of any changes by updating the &quot;Last updated&quot; date. Continued use of the Service after changes constitutes acceptance of the new terms.
               </p>
             </section>
 

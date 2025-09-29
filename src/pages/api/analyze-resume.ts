@@ -4,6 +4,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
+import { UserProfile, CareerObjectives, ResumeAnalysis, ResumeAnalysisRecord } from '@/types/api'
+import { logger } from '@/lib/logger'
+import { supabase } from '@/lib/supabase'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -106,10 +109,11 @@ export default async function handler(
     // Get user's career context from the token
     const token = req.headers.authorization?.replace('Bearer ', '')
     let userContext = null
-    
+    let userId = null
+
     if (token) {
       try {
-        const supabase = createClient(
+        const userSupabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           {
@@ -121,11 +125,12 @@ export default async function handler(
           }
         )
 
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user } } = await userSupabase.auth.getUser()
         if (user) {
+          userId = user.id
           const [profileResult, objectivesResult] = await Promise.all([
-            supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
-            supabase.from('career_objectives').select('*').eq('user_id', user.id).single()
+            userSupabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
+            userSupabase.from('career_objectives').select('*').eq('user_id', user.id).single()
           ])
           
           userContext = {
@@ -134,7 +139,7 @@ export default async function handler(
           }
         }
       } catch (error) {
-        console.log('Could not load user context, proceeding with basic analysis')
+        logger.info('Could not load user context, proceeding with basic analysis', 'AI', { error: error instanceof Error ? error.message : 'Unknown error' })
       }
     }
 
@@ -146,6 +151,25 @@ export default async function handler(
       userContext
     )
 
+    // Save analysis to database if user is authenticated
+    if (userId) {
+      try {
+        await saveAnalysisToDatabase(
+          userId,
+          resumeText,
+          skillsAnalysis,
+          targetRole || userContext?.objectives?.target_role,
+          careerStage || userContext?.objectives?.career_stage,
+          industryFocus || userContext?.objectives?.target_industry
+        )
+        logger.info('Resume analysis saved to database', 'DATABASE', { userId })
+      } catch (dbError) {
+        // Don't fail the request if database save fails, just log it
+        const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown error'
+        logger.error('Failed to save resume analysis to database', 'DATABASE', { userId, error: errorMessage })
+      }
+    }
+
     // Return the enhanced analysis with backward compatibility
     return res.status(200).json({
       // Legacy fields for backward compatibility
@@ -153,12 +177,13 @@ export default async function handler(
       strengths: skillsAnalysis.overall_assessment.strengths,
       improvements: skillsAnalysis.overall_assessment.improvement_areas,
       recommendations: skillsAnalysis.overall_assessment.strategic_recommendations,
-      
+
       // Enhanced intelligence data
       ...skillsAnalysis
     })
-  } catch (error: any) {
-    console.error('Error in enhanced skills analysis:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Enhanced skills analysis failed', 'AI', { error: errorMessage, resumeText: resumeText?.substring(0, 100) + '...' })
     return res.status(500).json({ error: 'Failed to analyze skills' })
   }
 }
@@ -168,7 +193,7 @@ async function analyzeSkillsWithAI(
   targetRole?: string,
   careerStage?: string,
   industryFocus?: string,
-  userContext?: any
+  userContext?: { profile: UserProfile | null; objectives: CareerObjectives | null }
 ): Promise<SkillsIntelligence> {
   
   const prompt = `You are an elite career strategist and skills intelligence expert with deep knowledge of current job markets across all industries. Perform a comprehensive skills analysis of this resume.
@@ -319,11 +344,64 @@ Respond with this EXACT JSON structure (no additional text):
       try {
         return JSON.parse(jsonMatch[0])
       } catch (parseError) {
-        console.error('JSON parsing error:', parseError)
+        const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error'
+        logger.error('Failed to parse AI response JSON', 'AI', { parseError: errorMessage, responseText: jsonMatch[0]?.substring(0, 200) + '...' })
         throw new Error('Failed to parse AI response')
       }
     }
   }
 
   throw new Error('Invalid AI response format')
+}
+
+// Helper function to save analysis to database
+async function saveAnalysisToDatabase(
+  userId: string,
+  resumeText: string,
+  skillsAnalysis: SkillsIntelligence,
+  targetRole?: string,
+  careerStage?: string,
+  industryFocus?: string
+): Promise<void> {
+  // Convert the skills analysis to ResumeAnalysis format
+  const analysisData: ResumeAnalysis = {
+    score: skillsAnalysis.overall_assessment.marketability_score,
+    strengths: skillsAnalysis.overall_assessment.strengths,
+    improvements: skillsAnalysis.overall_assessment.improvement_areas,
+    recommendations: skillsAnalysis.overall_assessment.strategic_recommendations,
+    extracted_skills: {
+      technical: skillsAnalysis.extracted_skills.technical,
+      soft: skillsAnalysis.extracted_skills.soft
+    }
+  }
+
+  const { error } = await supabase
+    .from('resume_analyses')
+    .insert({
+      user_id: userId,
+      resume_text: resumeText,
+      analysis_data: analysisData,
+      marketability_score: skillsAnalysis.overall_assessment.marketability_score,
+      target_role: targetRole || null,
+      career_stage: careerStage as 'entry' | 'mid' | 'senior' | 'executive' || null,
+      industry_focus: industryFocus || null
+    })
+
+  if (error) {
+    throw new Error(`Database insert failed: ${error.message}`)
+  }
+
+  // Track the analysis as a user activity
+  await supabase
+    .from('user_activities')
+    .insert({
+      user_id: userId,
+      activity_type: 'resume_analyzed',
+      activity_data: {
+        marketability_score: skillsAnalysis.overall_assessment.marketability_score,
+        technical_skills_count: skillsAnalysis.extracted_skills.technical.length,
+        soft_skills_count: skillsAnalysis.extracted_skills.soft.length
+      },
+      points_earned: 10 // Points for analyzing resume
+    })
 }

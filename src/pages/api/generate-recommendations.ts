@@ -3,6 +3,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -50,13 +51,14 @@ export default async function handler(
     }
 
     throw new Error('Failed to parse AI response')
-  } catch (error: any) {
-    console.error('Error generating recommendations:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to generate AI recommendations', 'AI', { error: errorMessage, requestData: JSON.stringify(req.body)?.substring(0, 200) + '...' })
     return res.status(500).json({ error: 'Failed to generate recommendations' })
   }
 }
 
-function buildAdvancedPrompt(careerGoals: any, profile: any, resumeData?: any) {
+function buildAdvancedPrompt(careerGoals: Record<string, unknown>, profile: Record<string, unknown>, resumeData?: Record<string, unknown>) {
   const industryContext = getIndustryContext(careerGoals.target_industry, careerGoals.target_role)
   const marketTrends = getMarketTrends(careerGoals.target_role)
   const experienceLevel = getExperienceLevel(careerGoals.career_stage)
@@ -160,7 +162,7 @@ function getExperienceLevel(stage: string): string {
   return levels[stage] || levels['transition']
 }
 
-function calculateConfidenceScore(careerGoals: any, profile: any): number {
+function calculateConfidenceScore(careerGoals: Record<string, unknown>, profile: Record<string, unknown>): number {
   let score = 50 // Base score
   
   if (careerGoals.target_role && careerGoals.target_role.length > 5) score += 15
@@ -187,7 +189,7 @@ function getNextReviewDate(timeline: string): string {
   return nextDate.toISOString().split('T')[0]
 }
 
-function getPersonalizationFactors(careerGoals: any, profile: any): string[] {
+function getPersonalizationFactors(careerGoals: Record<string, unknown>, profile: Record<string, unknown>): string[] {
   const factors = []
   
   if (careerGoals.work_preference === 'remote') factors.push('Remote work preference')

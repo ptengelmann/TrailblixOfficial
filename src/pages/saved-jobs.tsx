@@ -5,22 +5,66 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
-import EmptyState from '@/components/EmptyState'
-import { 
+import { logger } from '@/lib/logger'
+import {
   Bookmark, ExternalLink, Trash2, Star, Building, MapPin,
   DollarSign, Clock, Eye, Send, Edit3, FileText,
   ChevronRight, TrendingUp, AlertTriangle, CheckCircle,
   Check, RotateCcw
 } from 'lucide-react'
+// Define job sources directly since we removed the types file
+type JobSource = 'adzuna' | 'jsearch' | 'reed' | 'github' | 'remoteok'
 
 interface SavedJob {
   id: string
   job_id: string
-  job_data: any
+  job_data: {
+    id: string
+    title: string
+    company: {
+      display_name: string
+      logo_url?: string
+    }
+    location: {
+      display_name: string
+    }
+    description: string
+    salary_formatted?: string
+    redirect_url: string
+    source?: JobSource
+    ai_insights?: {
+      match_score: number
+      career_growth_potential: string
+      skills_alignment: number
+      match_reasoning: string[]
+    }
+    salary_benchmarks?: {
+      percentile_25: number
+      percentile_50: number
+      percentile_75: number
+      market_position: 'below' | 'average' | 'above'
+    }
+    company_insights?: {
+      rating?: number
+      culture_score?: number
+      work_life_balance?: number
+      compensation_rating?: number
+      review_count?: number
+    }
+  }
   interaction_type: string
   ai_match_score?: number
-  match_analysis?: any
+  match_analysis?: {
+    analysis?: {
+      overall_assessment?: string
+      strengths?: string[]
+      concerns?: string[]
+    }
+  }
   notes?: string
+  pipeline_stage?: 'saved' | 'applied' | 'interview' | 'offer' | 'rejected'
+  priority?: 'low' | 'medium' | 'high'
+  application_status?: string
   created_at: string
   updated_at: string
 }
@@ -104,7 +148,7 @@ export default function SavedJobsPage() {
         setStats(savedData.summary) // Use saved data summary for overall stats
       }
     } catch (error) {
-      console.error('Error loading job data:', error)
+      logger.error('Failed to load saved jobs data', 'DATABASE', { userId: user?.id, error: error.message })
     } finally {
       setLoading(false)
     }
@@ -144,7 +188,7 @@ export default function SavedJobsPage() {
         }
       }
     } catch (error) {
-      console.error('Error removing job:', error)
+      logger.error('Failed to remove job from saved', 'API', { jobId, error: error.message })
     } finally {
       setProcessingJobs(prev => {
         const newSet = new Set(prev)
@@ -189,7 +233,7 @@ export default function SavedJobsPage() {
         }
       }
     } catch (error) {
-      console.error('Error marking as applied:', error)
+      logger.error('Failed to mark job as applied', 'API', { jobId, error: error.message })
     } finally {
       setProcessingJobs(prev => {
         const newSet = new Set(prev)
@@ -247,7 +291,7 @@ export default function SavedJobsPage() {
         } : null)
       }
     } catch (error) {
-      console.error('Error moving back to saved:', error)
+      logger.error('Failed to move job back to saved', 'API', { jobId, error: error.message })
     } finally {
       setProcessingJobs(prev => {
         const newSet = new Set(prev)
@@ -289,7 +333,7 @@ export default function SavedJobsPage() {
         setEditingNotes(null)
       }
     } catch (error) {
-      console.error('Error updating notes:', error)
+      logger.error('Failed to update job notes', 'API', { jobId, error: error.message })
     }
   }
 
@@ -638,7 +682,7 @@ export default function SavedJobsPage() {
                 <Send className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No applications yet</h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6">
-                  When you apply to jobs, they'll appear here so you can track your progress.
+                  When you apply to jobs, they&apos;ll appear here so you can track your progress.
                 </p>
                 <button
                   onClick={() => setActiveTab('saved')}

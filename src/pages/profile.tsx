@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { validators } from '@/lib/validation'
-import { CheckCircle, XCircle, User, Target, Save, Edit3, Check, X } from 'lucide-react'
+import { CheckCircle, XCircle, User, Target, Edit3, Check, X } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface Profile {
   full_name: string
@@ -120,8 +121,8 @@ export default function UnifiedProfile() {
         setHasExistingGoals(!!goalsData.target_role)
       }
 
-    } catch (error: any) {
-      console.error('Error loading data:', error)
+    } catch (error: unknown) {
+      logger.error('Failed to load profile data', 'DATABASE', { userId: user?.id, error: error.message })
       setMessage({ type: 'error', text: 'Failed to load your information' })
     } finally {
       setLoading(false)
@@ -214,8 +215,8 @@ export default function UnifiedProfile() {
       setMessage({ type: 'success', text: `${section === 'profile' ? 'Profile' : 'Career goals'} saved successfully!` })
       setEditingSection('none')
       setTimeout(() => setMessage(null), 3000)
-    } catch (error: any) {
-      setMessage({ type: 'error', text: `Error saving ${section}: ${error.message}` })
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: `Error saving ${section}: ${error instanceof Error ? error.message : 'Unknown error'}` })
     } finally {
       setSaving(false)
     }
@@ -236,7 +237,7 @@ export default function UnifiedProfile() {
     
     // Clear error for this field
     if (errors[field]) {
-      const { [field]: removed, ...rest } = errors
+      const { [field]: _, ...rest } = errors
       setErrors(rest)
     }
   }
@@ -440,7 +441,7 @@ export default function UnifiedProfile() {
                 <div className="text-center py-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
                   <User className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
                   <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">No profile information yet</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">Click "Add Info" to set up your professional profile</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Click &quot;Add Info&quot; to set up your professional profile</p>
                 </div>
               )}
             </div>
@@ -636,7 +637,7 @@ export default function UnifiedProfile() {
                 <div className="text-center py-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
                   <Target className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
                   <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">No career goals defined</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">Click "Set Goals" to define your career aspirations</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Click &quot;Set Goals&quot; to define your career aspirations</p>
                 </div>
               )}
             </div>

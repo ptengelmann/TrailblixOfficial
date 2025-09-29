@@ -57,10 +57,11 @@ export default function UpdatePassword() {
       setTimeout(() => {
         router.push('/dashboard')
       }, 2000)
-    } catch (error: any) {
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       setMessage({ 
         type: 'error', 
-        text: error.message || 'Failed to update password. Please try again.' 
+        text: errorMessage || 'Failed to update password. Please try again.' 
       })
     } finally {
       setLoading(false)

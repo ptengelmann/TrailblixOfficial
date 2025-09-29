@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ProgressSummary, CareerMilestone, UserActivity } from '@/types/progress'
-import { 
-  TrendingUp, TrendingDown, Target, Calendar, 
+import { logger } from '@/lib/logger'
+import {
+  TrendingUp, TrendingDown, Target,
   Award, AlertTriangle, CheckCircle, Zap,
-  Users, BarChart3, Clock, ArrowUp, ArrowDown
+  Users, BarChart3, ArrowUp, ArrowDown
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -26,13 +27,21 @@ export default function ProgressWidgets({ userId }: ProgressWidgetsProps) {
   const loadProgressData = async () => {
     try {
       setLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
-      
+      setError('')
+
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError || !session?.access_token) {
+        logger.info('No active session, skipping progress data load', 'COMPONENT', { component: 'ProgressWidgets' })
+        setLoading(false)
+        return
+      }
+
       const response = await fetch('/api/career-progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           action: 'get_summary'
@@ -40,14 +49,31 @@ export default function ProgressWidgets({ userId }: ProgressWidgetsProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to load progress data')
+        const errorData = await response.text()
+        logger.error('Progress API request failed', 'API', { status: response.status, error: errorData, userId })
+
+        if (response.status === 401) {
+          logger.warn('Authentication issue detected, user may need to log in again', 'AUTH', { userId, status: response.status })
+          setError('Authentication required')
+          return
+        }
+
+        throw new Error(`API error: ${response.status}`)
       }
 
       const result = await response.json()
-      setProgressData(result.data)
-    } catch (error: any) {
-      console.error('Error loading progress:', error)
-      setError('Unable to load progress data')
+
+      if (result.success && result.data) {
+        setProgressData(result.data)
+      } else {
+        logger.info('No progress data available yet', 'COMPONENT', { userId, component: 'ProgressWidgets' })
+        setProgressData(null)
+      }
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load progress data', 'COMPONENT', { userId, component: 'ProgressWidgets', error: errorMessage })
+      setError('Unable to load progress data at this time')
     } finally {
       setLoading(false)
     }
@@ -66,16 +92,44 @@ export default function ProgressWidgets({ userId }: ProgressWidgetsProps) {
     )
   }
 
-  if (error || !progressData) {
+  if (error && error !== 'Unable to load progress data at this time') {
     return (
-      <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-2xl p-6">
+      <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle className="text-amber-600 dark:text-amber-500" size={20} />
-          <h3 className="text-amber-800 dark:text-amber-400 font-medium">Progress Tracking Unavailable</h3>
+          <AlertTriangle className="text-red-600 dark:text-red-500" size={20} />
+          <h3 className="text-red-800 dark:text-red-400 font-medium">Authentication Required</h3>
         </div>
-        <p className="text-amber-700 dark:text-amber-300 text-sm">
-          Complete your profile setup to unlock career progress tracking and insights.
+        <p className="text-red-700 dark:text-red-300 text-sm">
+          Please log in to view your career progress.
         </p>
+      </div>
+    )
+  }
+
+  if (!progressData) {
+    return (
+      <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Target className="text-slate-600 dark:text-slate-400" size={20} />
+          <h3 className="text-slate-800 dark:text-slate-400 font-medium">Start Your Progress Journey</h3>
+        </div>
+        <p className="text-slate-700 dark:text-slate-300 text-sm mb-3">
+          Complete some career activities to see your progress tracking here.
+        </p>
+        <div className="flex gap-2">
+          <Link
+            href="/jobs"
+            className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            Search Jobs
+          </Link>
+          <button
+            onClick={loadProgressData}
+            className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
     )
   }
@@ -244,7 +298,7 @@ export default function ProgressWidgets({ userId }: ProgressWidgetsProps) {
         <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2 mb-4">
             <Award className="text-blue-600 dark:text-blue-500" size={20} />
-            This Week's Focus
+            This Week&apos;s Focus
           </h3>
           
           <div className="space-y-3">

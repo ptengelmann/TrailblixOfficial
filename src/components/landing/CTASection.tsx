@@ -1,43 +1,56 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Sparkles, CheckCircle, Clock, Users } from 'lucide-react'
 
 export default function CTASection() {
   return (
-    <section className="py-32 bg-gradient-to-b from-slate-900 to-blue-950 dark:from-slate-100 dark:to-blue-50 relative overflow-hidden">
-      {/* Background decoration */}
+    <section className="py-32 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+      {/* Background pattern */}
       <div className="absolute inset-0">
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(-45deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute top-1/3 -left-20 w-80 h-80 bg-blue-500/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/3 -right-20 w-80 h-80 bg-indigo-500/8 rounded-full blur-3xl" />
       </div>
-      
+
       <div className="max-w-4xl mx-auto px-6 text-center relative">
         {/* Main headline */}
-        <h2 className="text-4xl md:text-5xl font-light text-white dark:text-slate-900 tracking-tight mb-6">
-          Ready to make your
-          <span className="block font-medium text-blue-400 dark:text-blue-600">
-            next career move?
+        <h2 className="text-5xl md:text-6xl font-light text-slate-900 dark:text-white tracking-tight leading-tight mb-6">
+          Ready to advance
+          <span className="block font-medium text-blue-600 dark:text-blue-500 mt-2">
+            your career?
           </span>
         </h2>
-        
-        <p className="text-lg text-slate-300 dark:text-slate-600 max-w-2xl mx-auto mb-12">
-          Get AI-powered career intelligence in under 5 minutes
+
+        <p className="text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-12 max-w-2xl mx-auto">
+          Get AI-powered career intelligence and personalized insights in under 5 minutes.
         </p>
-        
-        {/* Simple CTA */}
-        <div className="mb-8">
+
+        {/* Primary CTA */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link
             href="/auth/signup"
-            className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+            className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all hover:scale-105 hover:shadow-lg"
           >
-            Start free analysis
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            <Sparkles size={18} />
+            Start Free Analysis
+            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
-        
-        {/* Simple trust line */}
-        <p className="text-sm text-slate-400 dark:text-slate-600">
-          No credit card required • 5-minute setup • Cancel anytime
-        </p>
+
+        {/* Trust indicators */}
+        <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <CheckCircle size={16} className="text-green-500" />
+            <span>No credit card required</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="text-blue-500" />
+            <span>5-minute setup</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-indigo-500" />
+            <span>50K+ professionals</span>
+          </div>
+        </div>
       </div>
     </section>
   )

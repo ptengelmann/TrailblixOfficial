@@ -1,8 +1,10 @@
 // src/components/ErrorBoundary.tsx
 // Catches React errors and displays fallback UI
 
-import { Component, ReactNode } from 'react'
+import { Component, ReactNode, ErrorInfo } from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
+import Link from 'next/link'
+import { logger } from '@/lib/logger'
 
 interface Props {
   children: ReactNode
@@ -11,7 +13,7 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
-  errorInfo: any
+  errorInfo: ErrorInfo | null
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
@@ -32,8 +34,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('Error caught by boundary:', error, errorInfo)
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    logger.error('React Error Boundary caught an error', 'COMPONENT', { error: error.message, stack: error.stack, componentStack: errorInfo.componentStack })
     this.setState({
       error,
       errorInfo
@@ -63,7 +65,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               </h2>
               
               <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-                We encountered an unexpected error. Don't worry, your data is safe.
+                We encountered an unexpected error. Don&apos;t worry, your data is safe.
               </p>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -83,13 +85,13 @@ export default class ErrorBoundary extends Component<Props, State> {
                   Try Again
                 </button>
                 
-                <a
+                <Link
                   href="/dashboard"
                   className="flex-1 py-3 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-750 hover:border-slate-300 dark:hover:border-slate-600 transition-colors flex items-center justify-center gap-2"
                 >
                   <Home className="h-4 w-4" />
                   Go Home
-                </a>
+                </Link>
               </div>
             </div>
           </div>

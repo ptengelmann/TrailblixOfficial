@@ -192,7 +192,7 @@ export class ProgressCalculator {
     return recommendations.slice(0, 4)
   }
 
-  static createDefaultMilestones(careerObjectives: any): Partial<CareerMilestone>[] {
+  static createDefaultMilestones(careerObjectives: { timeline?: string; career_stage?: string; primary_goal?: string }): Partial<CareerMilestone>[] {
     const milestones: Partial<CareerMilestone>[] = []
     
     let weeklyApplications = 3

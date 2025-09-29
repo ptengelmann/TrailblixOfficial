@@ -43,9 +43,10 @@ export default function Login() {
       })
       if (error) throw error
       router.push('/dashboard')
-    } catch (error: any) {
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       setErrors({ 
-        password: error.message || 'Invalid email or password' 
+        password: errorMessage || 'Invalid email or password' 
       })
     } finally {
       setLoading(false)

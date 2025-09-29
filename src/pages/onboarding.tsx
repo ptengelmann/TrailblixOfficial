@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ChevronRight, ChevronLeft, Briefcase, Target, Award, MapPin, Clock, TrendingUp } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth()
@@ -63,9 +64,9 @@ const handleSubmit = async () => {
 
     // Redirect after successful save
     router.push('/dashboard')
-  } catch (error: any) {
-    console.error('Error saving objectives:', error)
-    alert(`Error: ${error.message}`)
+  } catch (error: unknown) {
+    logger.error('Failed to save career objectives', 'DATABASE', { userId: user?.id, error: error.message, formData })
+    alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   } finally {
     setLoading(false)
   }
@@ -94,7 +95,7 @@ const handleSubmit = async () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-light text-slate-900 dark:text-white mb-4 tracking-tight">
-            Let's Plan Your Career Journey
+            Let&apos;s Plan Your Career Journey
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
             Help us understand your goals so we can personalize your experience
@@ -151,7 +152,7 @@ const handleSubmit = async () => {
               <div>
                 <label className="block text-xl font-semibold mb-6 flex items-center gap-3 text-slate-900 dark:text-white">
                   <Target className="text-blue-600 dark:text-blue-500" size={24} />
-                  What's your primary goal?
+                  What&apos;s your primary goal?
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
@@ -180,7 +181,7 @@ const handleSubmit = async () => {
               <div>
                 <label className="block text-xl font-semibold mb-6 flex items-center gap-3 text-slate-900 dark:text-white">
                   <Clock className="text-blue-600 dark:text-blue-500" size={24} />
-                  What's your timeline?
+                  What&apos;s your timeline?
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
@@ -211,7 +212,7 @@ const handleSubmit = async () => {
               <div>
                 <label className="block text-xl font-semibold mb-6 flex items-center gap-3 text-slate-900 dark:text-white">
                   <Award className="text-blue-600 dark:text-blue-500" size={24} />
-                  What's your target role?
+                  What&apos;s your target role?
                 </label>
                 <input
                   type="text"
@@ -273,7 +274,7 @@ const handleSubmit = async () => {
                 <textarea
                   value={formData.current_situation}
                   onChange={(e) => updateField('current_situation', e.target.value)}
-                  placeholder="What's your current role? What challenges are you facing? What are you looking to change?"
+                  placeholder="What&apos;s your current role? What challenges are you facing? What are you looking to change?"
                   rows={6}
                   className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
