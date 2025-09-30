@@ -13,7 +13,7 @@
 
 1. In your Supabase dashboard, go to **SQL Editor**
 2. Click **"New Query"**
-3. Copy and paste the contents of `database-advanced-intelligence.sql`
+3. Copy and paste the contents of `database/schema.sql`
 4. Click **"Run"** button
 5. Wait for it to complete (should take ~30 seconds)
 
@@ -22,7 +22,7 @@
 ```bash
 # If you have Supabase CLI installed
 supabase db reset
-psql "postgresql://[YOUR_DB_URL]" -f database-advanced-intelligence.sql
+psql "postgresql://[YOUR_DB_URL]" -f database/schema.sql
 ```
 
 ### Step 3: Verify Tables Were Created

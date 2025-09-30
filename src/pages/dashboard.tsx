@@ -1,51 +1,65 @@
-// src/pages/dashboard.tsx - Clean layout with original aesthetic preserved
+// src/pages/dashboard.tsx - Tabbed dashboard with interactive guidance
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { User, FileText, Target, Sparkles, TrendingUp, Search, CheckCircle, Calendar } from 'lucide-react'
+import {
+  User,
+  FileText,
+  Target,
+  Search,
+  CheckCircle,
+  TrendingUp,
+  BarChart3,
+  Home,
+  Activity,
+  Users,
+  Brain,
+  ChevronRight,
+  AlertCircle
+} from 'lucide-react'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
-import EmptyState from '@/components/EmptyState'
 import ProgressWidgets from '@/components/dashboard/ProgressWidgets'
 import NetworkingTracker from '@/components/NetworkingTracker'
 import DailyTasks from '@/components/dashboard/DailyTasks'
 import ActivityFeed from '@/components/dashboard/ActivityFeed'
 import CareerInsights from '@/components/dashboard/CareerInsights'
 import { logger } from '@/lib/logger'
+import type { UserProfile, CareerObjectives } from '@/types/api'
+
+interface ResumeData {
+  score: number
+  created_at: string
+  overall_assessment?: {
+    marketability_score?: number
+  }
+  [key: string]: unknown
+}
+
+interface JobStats {
+  saved_jobs: number
+  applied_jobs: number
+  viewed_jobs: number
+}
+
+type TabType = 'overview' | 'activity' | 'networking' | 'insights'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [profile, setProfile] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null)
-  const [careerGoals, setCareerGoals] = useState<any>(null)
+  const [careerGoals, setCareerGoals] = useState<CareerObjectives | null>(null)
   const [hasResume, setHasResume] = useState(false)
-  const [resumeData, setResumeData] = useState<any>(null)
-  const [jobStats, setJobStats] = useState<any>(null)
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null)
+  const [jobStats, setJobStats] = useState<JobStats | null>(null)
   const [showProgressTracking, setShowProgressTracking] = useState(false)
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, loading, router])
-
-  useEffect(() => {
-    if (user) {
-      loadProfile()
-      checkOnboarding()
-      loadCareerGoals()
-      checkResume()
-      loadLatestResume()
-      loadJobStats()
-      initializeProgressTracking()
-    }
-  }, [user])
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('user_profiles')
@@ -57,13 +71,16 @@ export default function Dashboard() {
         setProfile(data)
       }
     } catch (error) {
-      logger.error('Failed to load user profile', 'DATABASE', { userId: user?.id, error: error.message })
+      logger.error('Failed to load user profile', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
     } finally {
       setProfileLoading(false)
     }
-  }
+  }, [user?.id])
 
-  const loadCareerGoals = async () => {
+  const loadCareerGoals = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('career_objectives')
@@ -75,11 +92,14 @@ export default function Dashboard() {
         setCareerGoals(data)
       }
     } catch (error) {
-      logger.error('Failed to load career goals', 'DATABASE', { userId: user?.id, error: error.message })
+      logger.error('Failed to load career goals', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
-  }
+  }, [user?.id])
 
-  const checkResume = async () => {
+  const checkResume = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('resumes')
@@ -89,11 +109,14 @@ export default function Dashboard() {
 
       setHasResume(!!data && data.length > 0)
     } catch (error) {
-      logger.error('Failed to check resume status', 'DATABASE', { userId: user?.id, error: error.message })
+      logger.error('Failed to check resume status', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
-  }
+  }, [user?.id])
 
-  const loadLatestResume = async () => {
+  const loadLatestResume = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('resumes')
@@ -108,26 +131,29 @@ export default function Dashboard() {
         const resumeRecord = data[0]
         if (resumeRecord.ai_analysis) {
           setResumeData({
-            score: resumeRecord.score,
+            score: resumeRecord.score || 0,
             created_at: resumeRecord.created_at,
-            ...resumeRecord.ai_analysis
+            ...resumeRecord.ai_analysis as Record<string, unknown>
           })
         } else {
           setResumeData({
-            score: resumeRecord.score,
+            score: resumeRecord.score || 0,
             created_at: resumeRecord.created_at
           })
         }
       }
     } catch (error) {
-      logger.error('Failed to load resume data', 'DATABASE', { userId: user?.id, error: error.message })
+      logger.error('Failed to load resume data', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
-  }
+  }, [user?.id])
 
-  const loadJobStats = async () => {
+  const loadJobStats = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/jobs/interactions', {
         method: 'POST',
         headers: {
@@ -142,43 +168,17 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
-        setJobStats(data.summary)
+        setJobStats(data.summary || { saved_jobs: 0, applied_jobs: 0, viewed_jobs: 0 })
       }
     } catch (error) {
       // Job stats are optional - don't log errors
     }
-  }
+  }, [])
 
-  const initializeProgressTracking = async () => {
-    try {
-      const { data } = await supabase
-        .from('career_objectives')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single()
-
-      if (data) {
-        setShowProgressTracking(true)
-        
-        const { data: existingMilestones } = await supabase
-          .from('career_milestones')
-          .select('id')
-          .eq('user_id', user?.id)
-          .limit(1)
-
-        if (!existingMilestones || existingMilestones.length === 0) {
-          await createDefaultMilestones(data)
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to initialize progress tracking', 'DATABASE', { userId: user?.id, error: error.message })
-    }
-  }
-
-  const createDefaultMilestones = async (careerObjectives: Record<string, unknown>) => {
+  const createDefaultMilestones = useCallback(async (careerObjectives: CareerObjectives) => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       let weeklyApplications = 3
       if (careerObjectives.timeline === 'immediate') weeklyApplications = 8
       else if (careerObjectives.timeline === 'short') weeklyApplications = 5
@@ -230,11 +230,43 @@ export default function Dashboard() {
       })
 
     } catch (error) {
-      logger.error('Failed to create default milestones', 'DATABASE', { userId: user?.id, error: error.message })
+      logger.error('Failed to create default milestones', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
-  }
+  }, [user?.id])
 
-  const checkOnboarding = async () => {
+  const initializeProgressTracking = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('career_objectives')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single()
+
+      if (data) {
+        setShowProgressTracking(true)
+
+        const { data: existingMilestones } = await supabase
+          .from('career_milestones')
+          .select('id')
+          .eq('user_id', user?.id)
+          .limit(1)
+
+        if (!existingMilestones || existingMilestones.length === 0) {
+          await createDefaultMilestones(data)
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to initialize progress tracking', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+  }, [user?.id, createDefaultMilestones])
+
+  const checkOnboarding = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('career_objectives')
@@ -248,10 +280,31 @@ export default function Dashboard() {
         setHasCompletedOnboarding(true)
       }
     } catch (error) {
-      logger.error('Failed to check onboarding status', 'DATABASE', { userId: user?.id, error: error.message })
+      logger.error('Failed to check onboarding status', 'DATABASE', {
+        userId: user?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
       setHasCompletedOnboarding(false)
     }
-  }
+  }, [user?.id, router])
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login')
+    }
+  }, [user, loading, router])
+
+  useEffect(() => {
+    if (user) {
+      loadProfile()
+      checkOnboarding()
+      loadCareerGoals()
+      checkResume()
+      loadLatestResume()
+      loadJobStats()
+      initializeProgressTracking()
+    }
+  }, [user, loadProfile, checkOnboarding, loadCareerGoals, checkResume, loadLatestResume, loadJobStats, initializeProgressTracking])
 
   if (loading || profileLoading || hasCompletedOnboarding === null) {
     return (
@@ -269,342 +322,328 @@ export default function Dashboard() {
   const totalSteps = 3
   const isSetupComplete = completedSteps === totalSteps
 
+  // Get next step
+  const getNextStep = () => {
+    if (!hasProfile) return { text: "Set up your career profile", href: "/profile", icon: User }
+    if (!careerGoals) return { text: "Define your career goals", href: "/profile", icon: Target }
+    if (!hasResume) return { text: "Analyze your resume", href: "/resume-analyzer", icon: FileText }
+    return null
+  }
+
+  const nextStep = getNextStep()
+
+  const tabs = [
+    { id: 'overview' as TabType, name: 'Overview', icon: Home },
+    { id: 'activity' as TabType, name: 'Activity', icon: Activity },
+    { id: 'networking' as TabType, name: 'Networking', icon: Users },
+    { id: 'insights' as TabType, name: 'Insights', icon: Brain },
+  ]
+
   return (
     <PageLayout>
-      {/* Welcome Section */}
-      <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight mb-2">
-              Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">
-              {profile?.current_role || 'Complete your setup to unlock personalized career insights'}
-            </p>
-          </div>
-          {isSetupComplete && (
-            <div className="text-right">
-              <p className="text-sm text-slate-600 dark:text-slate-400">Today</p>
-              <p className="text-lg font-medium text-slate-900 dark:text-white">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long',
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
-              </p>
-            </div>
-          )}
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-light text-slate-900 dark:text-white mb-2">
+            Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            {profile?.current_role || 'Complete your setup to unlock personalized career insights'}
+          </p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 mb-8">
-        {/* Progress Tracking - Only show when setup is complete */}
-        {showProgressTracking && isSetupComplete && (
-          <div className="xl:col-span-1">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Career Progress</h3>
-            <ProgressWidgets userId={user.id} />
+        {/* Interactive Progress Guidance */}
+        {!isSetupComplete && nextStep && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center">
+                    <AlertCircle className="text-blue-600 dark:text-blue-500" size={16} />
+                  </div>
+                  <div>
+                    <p className="text-blue-900 dark:text-blue-100 font-medium">Next Step</p>
+                    <p className="text-blue-700 dark:text-blue-300 text-sm">{nextStep.text}</p>
+                  </div>
+                </div>
+                <div className="hidden sm:flex items-center text-slate-400 dark:text-slate-600">
+                  <span className="text-sm">{completedSteps}/{totalSteps} completed</span>
+                  <div className="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2 ml-3">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <Link
+                href={nextStep.href}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <nextStep.icon size={16} />
+                Continue Setup
+                <ChevronRight size={16} />
+              </Link>
+            </div>
           </div>
         )}
 
-        {/* Main Content Area */}
-        <div className={`${showProgressTracking && isSetupComplete ? 'xl:col-span-3' : 'xl:col-span-4'}`}>
-          {/* Daily Tasks - Show when setup is complete */}
-          {isSetupComplete && (
-            <div className="mb-8">
-              <DailyTasks />
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            {/* Setup Progress - Hide when complete and progress tracking is enabled */}
-            {!(showProgressTracking && isSetupComplete) && (
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Setup Progress</h3>
-                
-                <div className="mb-6">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600 dark:text-slate-400">Complete</span>
-                    <span className="text-slate-600 dark:text-slate-400">{completedSteps}/{totalSteps}</span>
-                  </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
-                    ></div>
-                  </div>
+        {/* Setup Complete Banner */}
+        {isSetupComplete && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-950/50 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="text-green-600 dark:text-green-500" size={16} />
                 </div>
-
-                <div className="space-y-3">
-                  <div className={`flex items-center gap-3 ${hasProfile ? 'text-green-600 dark:text-green-500' : 'text-slate-400 dark:text-slate-600'}`}>
-                    <CheckCircle size={16} className={hasProfile ? 'text-green-600 dark:text-green-500' : 'text-slate-300 dark:text-slate-600'} />
-                    <span className="text-sm font-medium">Career Profile</span>
-                  </div>
-                  <div className={`flex items-center gap-3 ${careerGoals ? 'text-green-600 dark:text-green-500' : 'text-slate-400 dark:text-slate-600'}`}>
-                    <CheckCircle size={16} className={careerGoals ? 'text-green-600 dark:text-green-500' : 'text-slate-300 dark:text-slate-600'} />
-                    <span className="text-sm font-medium">Career Goals</span>
-                  </div>
-                  <div className={`flex items-center gap-3 ${hasResume ? 'text-green-600 dark:text-green-500' : 'text-slate-400 dark:text-slate-600'}`}>
-                    <CheckCircle size={16} className={hasResume ? 'text-green-600 dark:text-green-500' : 'text-slate-300 dark:text-slate-600'} />
-                    <span className="text-sm font-medium">Skills Analysis</span>
-                  </div>
+                <div>
+                  <p className="text-green-900 dark:text-green-100 font-medium">
+                    {showProgressTracking ? 'Career Tracking Active!' : 'Setup Complete!'}
+                  </p>
+                  <p className="text-green-700 dark:text-green-300 text-sm">
+                    {showProgressTracking
+                      ? 'Your progress is being tracked. Stay consistent to maintain momentum.'
+                      : 'Explore your personalized career insights and start applying to jobs.'
+                    }
+                  </p>
                 </div>
               </div>
-            )}
-
-            {/* Current Status */}
-            <div className={`${!(showProgressTracking && isSetupComplete) ? 'lg:col-span-2' : 'lg:col-span-3'} bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800`}>
-              {careerGoals ? (
-                <>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Target className="text-blue-600" size={20} />
-                    Your Career Focus
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    {careerGoals.target_role && (
-                      <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                        <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">Target Role</p>
-                        <p className="font-semibold text-slate-900 dark:text-white">{careerGoals.target_role}</p>
-                      </div>
-                    )}
-                    
-                    {careerGoals.primary_goal && (
-                      <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                        <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">Primary Goal</p>
-                        <p className="font-semibold text-slate-900 dark:text-white capitalize">{careerGoals.primary_goal.replace('_', ' ')}</p>
-                      </div>
-                    )}
-                    
-                    {careerGoals.timeline && (
-                      <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                        <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">Timeline</p>
-                        <p className="font-semibold text-slate-900 dark:text-white capitalize">{careerGoals.timeline}-term</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {resumeData && (
-                    <div className="bg-blue-50 dark:bg-blue-950/50 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-blue-700 dark:text-blue-400 font-medium">Skills Analysis Complete</p>
-                          <p className="text-slate-600 dark:text-slate-400 text-sm">
-                            Marketability Score: {resumeData.score || resumeData.overall_assessment?.marketability_score || 'N/A'}/100
-                          </p>
-                        </div>
-                        <Link 
-                          href="/resume-analyzer"
-                          className="px-4 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 rounded-lg text-blue-700 dark:text-blue-400 text-sm font-medium transition-colors"
-                        >
-                          View Details →
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <EmptyState
-                  icon={<Target className="h-8 w-8" />}
-                  title="Set Your Career Goals"
-                  description="Tell us about your career aspirations to get personalized guidance."
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Job Activity Summary */}
-          {jobStats && (
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Job Search Activity</h3>
-                {showProgressTracking && (
-                  <Link href="/career-coach" className="text-blue-600 dark:text-blue-500 text-sm font-medium hover:underline">
-                    View detailed insights →
+              <div className="flex gap-3">
+                <Link
+                  href="/jobs"
+                  className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
+                >
+                  Find Jobs
+                </Link>
+                {isSetupComplete && (
+                  <Link
+                    href="/intelligence-dashboard"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    AI Insights →
                   </Link>
                 )}
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-500 mb-1">{jobStats.saved_jobs || 0}</p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Saved</p>
-                  {showProgressTracking && (
-                    <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">This week</p>
-                  )}
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-500 mb-1">{jobStats.applied_jobs || 0}</p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Applied</p>
-                  {showProgressTracking && (
-                    <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">This week</p>
-                  )}
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-500 mb-1">{jobStats.viewed_jobs || 0}</p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Viewed</p>
-                  {showProgressTracking && (
-                    <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">This week</p>
-                  )}
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-500 mb-1">
-                    {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
-                  </p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Apply Rate</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Networking and Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div>
-              <NetworkingTracker />
-            </div>
-            <div>
-              <ActivityFeed />
             </div>
           </div>
+        )}
 
-          {/* Career Insights */}
-          {isSetupComplete && (
-            <div className="mb-8">
-              <CareerInsights />
-            </div>
-          )}
+        {/* Tabs */}
+        <div className="border-b border-slate-200 dark:border-slate-700 mb-6">
+          <nav className="flex space-x-8">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-500'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                <tab.icon size={16} />
+                {tab.name}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-          {/* Next Steps */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">What&apos;s Next</h3>
-            
-            {completedSteps === totalSteps ? (
-              <div className="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-6">
-                <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2">
-                  {showProgressTracking ? 'Career Tracking Active!' : 'Setup Complete!'}
-                </h4>
-                <p className="text-green-700 dark:text-green-300 mb-4">
-                  {showProgressTracking ? 
-                    'Your progress is being tracked. Stay consistent with your job search activities to maintain momentum.' :
-                    'You\'re all set up! Explore your personalized career insights and start applying to jobs.'
-                  }
-                </p>
-                <div className="flex gap-4">
-                  {showProgressTracking ? (
+        {/* Tab Content */}
+        <div className="space-y-6">
+          {activeTab === 'overview' && (
+            <>
+              {/* Overview Content */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Quick Actions */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Quick Actions</h3>
+                  <div className="space-y-3">
+                    <Link href="/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <User className="text-blue-600 dark:text-blue-500" size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Profile</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {profile?.full_name ? 'Update info' : 'Set up profile'}
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link href="/resume-analyzer" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <FileText className="text-blue-600 dark:text-blue-500" size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Resume</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {resumeData ? `Score: ${resumeData.score}/100` : 'Analyze resume'}
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link href="/jobs" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Search className="text-blue-600 dark:text-blue-500" size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Job Search</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Find opportunities</p>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Career Focus */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                  {careerGoals ? (
                     <>
-                      <Link 
-                        href="/jobs"
-                        className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
-                      >
-                        Apply to Jobs
-                      </Link>
-                      <Link 
-                        href="/career-coach"
-                        className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
-                      >
-                        View Weekly Strategy
-                      </Link>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center">
+                          <Target className="text-blue-600 dark:text-blue-500" size={16} />
+                        </div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white">Career Focus</h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        {careerGoals.target_role && (
+                          <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 text-center">
+                            <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-2">Target Role</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{careerGoals.target_role}</p>
+                          </div>
+                        )}
+
+                        {careerGoals.primary_goal && (
+                          <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 text-center">
+                            <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-2">Primary Goal</p>
+                            <p className="font-semibold text-slate-900 dark:text-white capitalize">{careerGoals.primary_goal.replace('_', ' ')}</p>
+                          </div>
+                        )}
+
+                        {careerGoals.timeline && (
+                          <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 text-center">
+                            <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-2">Timeline</p>
+                            <p className="font-semibold text-slate-900 dark:text-white capitalize">{careerGoals.timeline}-term</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {resumeData && (
+                        <div className="bg-blue-50 dark:bg-blue-950/50 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-blue-700 dark:text-blue-400 font-medium">Skills Analysis Complete</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                                Marketability Score: {resumeData.score || resumeData.overall_assessment?.marketability_score || 'N/A'}/100
+                              </p>
+                            </div>
+                            <Link
+                              href="/resume-analyzer"
+                              className="px-4 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 rounded-lg text-blue-700 dark:text-blue-400 text-sm font-medium transition-colors"
+                            >
+                              View Details →
+                            </Link>
+                          </div>
+                        </div>
+                      )}
                     </>
                   ) : (
-                    <>
-                      <Link 
-                        href="/resume-analyzer"
-                        className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
-                      >
-                        View Skills Analysis
+                    <div className="text-center py-8">
+                      <Target className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Set Your Career Goals</h3>
+                      <p className="text-slate-600 dark:text-slate-400 mb-4">Tell us about your career aspirations to get personalized guidance.</p>
+                      <Link href="/profile" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                        Get Started
                       </Link>
-                      <Link 
-                        href="/jobs"
-                        className="px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-lg text-green-800 dark:text-green-300 text-sm font-medium transition-colors"
-                      >
-                        Find Jobs
-                      </Link>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
-                <h4 className="font-semibold text-amber-800 dark:text-amber-400 mb-2">Complete Your Setup</h4>
-                <p className="text-amber-700 dark:text-amber-300 mb-4">
-                  {!hasProfile && "Start by setting up your career profile."}
-                  {hasProfile && !careerGoals && "Next, define your career goals."}
-                  {hasProfile && careerGoals && !hasResume && "Finally, upload your resume for skills analysis."}
-                </p>
-                <div className="flex gap-4">
-                  {!hasProfile && (
-                    <Link 
-                      href="/profile"
-                      className="px-4 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm font-medium transition-colors"
-                    >
-                      Create Profile
-                    </Link>
-                  )}
-                  {hasProfile && !careerGoals && (
-                    <Link 
-                      href="/profile"
-                      className="px-4 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm font-medium transition-colors"
-                    >
-                      Set Career Goals
-                    </Link>
-                  )}
-                  {hasProfile && careerGoals && !hasResume && (
-                    <Link 
-                      href="/resume-analyzer"
-                      className="px-4 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm font-medium transition-colors"
-                    >
-                      Analyze Resume
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* Quick Actions */}
-          <div>
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Quick Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Link href="/profile" className="group bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                  <User className="text-blue-600 dark:text-blue-500" size={24} />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Career Profile</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  {profile?.full_name ? 'Update your information' : 'Set up your career profile'}
-                </p>
-              </Link>
-
-              <Link href="/resume-analyzer" className="group bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                  <FileText className="text-blue-600 dark:text-blue-500" size={24} />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Skills Intelligence</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  {resumeData ? 
-                    `Resume analyzed - ${resumeData.score}/100 score` :
-                    'Get AI-powered skills analysis'
-                  }
-                </p>
-                {resumeData?.created_at && (
-                  <p className="text-slate-500 dark:text-slate-600 text-xs mt-1">
-                    Last analyzed: {new Date(resumeData.created_at).toLocaleDateString()}
-                  </p>
+              {/* Job Stats & Progress */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Job Activity */}
+                {jobStats && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                    <h3 className="font-semibold text-slate-900 dark:text-white mb-6">Job Activity</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-500 mb-1">{jobStats.saved_jobs || 0}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm">Saved</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-500 mb-1">{jobStats.applied_jobs || 0}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm">Applied</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-500 mb-1">{jobStats.viewed_jobs || 0}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm">Viewed</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-500 mb-1">
+                          {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
+                        </p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm">Apply Rate</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </Link>
 
-              <Link href="/jobs" className="group bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                  <Search className="text-blue-600 dark:text-blue-500" size={24} />
+                {/* Progress Widget */}
+                {showProgressTracking && isSetupComplete && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="text-blue-600 dark:text-blue-500" size={16} />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-white">Career Progress</h3>
+                    </div>
+                    <ProgressWidgets userId={user.id} />
+                  </div>
+                )}
+              </div>
+
+              {/* Daily Tasks */}
+              {isSetupComplete && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <DailyTasks />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Job Search</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Find AI-matched opportunities based on your career goals
-                </p>
-              </Link>
+              )}
+            </>
+          )}
+
+          {activeTab === 'activity' && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <ActivityFeed />
             </div>
-          </div>
+          )}
+
+          {activeTab === 'networking' && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <NetworkingTracker />
+            </div>
+          )}
+
+          {activeTab === 'insights' && (
+            <>
+              {isSetupComplete ? (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <CareerInsights />
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 text-center">
+                  <Brain className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Complete Setup for Insights</h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    Finish setting up your profile to unlock personalized career insights and AI-powered recommendations.
+                  </p>
+                  <Link href="/profile" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    Complete Setup
+                  </Link>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </PageLayout>
