@@ -1,5 +1,5 @@
 // src/pages/api/jobs/search.ts
-// Advanced job search API with Adzuna integration and AI matching
+// Advanced multi-source job search API with AI matching and caching
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
@@ -11,10 +11,20 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-// Adzuna API configuration
+// Multi-source API configuration
 const ADZUNA_BASE_URL = 'https://api.adzuna.com/v1/api/jobs'
 const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID
 const ADZUNA_APP_KEY = process.env.ADZUNA_APP_KEY
+
+const JSEARCH_BASE_URL = 'https://jsearch.p.rapidapi.com/search'
+const JSEARCH_API_KEY = process.env.JSEARCH_API_KEY
+
+const REED_BASE_URL = 'https://www.reed.co.uk/api/1.0/search'
+const REED_API_KEY = process.env.REED_API_KEY
+
+// In-memory cache for search results (expires after 5 minutes)
+const searchCache = new Map<string, { data: unknown; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 interface JobSearchFilters {
   query?: string
@@ -83,32 +93,92 @@ export default async function handler(
       return res.status(401).json({ error: 'Invalid authentication' })
     }
 
-    const { 
-      filters, 
+    const {
+      filters,
       generate_ai_matching = true,
-      save_search_session = true 
+      save_search_session = true,
+      sources = ['adzuna', 'jsearch', 'reed']
     } = req.body as {
       filters: JobSearchFilters
       generate_ai_matching?: boolean
       save_search_session?: boolean
+      sources?: string[]
     }
 
-    // Search jobs using Adzuna API
-    const adzunaJobs = await searchAdzunaJobs(filters)
-    
-    if (!adzunaJobs || adzunaJobs.length === 0) {
-      return res.status(200).json({ 
-        jobs: [], 
+    // Check cache first
+    const cacheKey = JSON.stringify({ filters, sources, userId: user.id })
+    const cached = searchCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      logger.info('Returning cached job search results', 'CACHE')
+      return res.status(200).json(cached.data)
+    }
+
+    // Detect country from location for better API routing
+    const countryData = detectCountry(filters.location || '')
+    logger.info('Country detection result', 'SEARCH', {
+      location: filters.location,
+      detectedCountry: countryData.country,
+      isUK: countryData.isUK
+    })
+
+    // Search jobs from multiple sources in parallel
+    const jobPromises: Promise<AdzunaJob[]>[] = []
+
+    if (sources.includes('adzuna')) {
+      jobPromises.push(searchAdzunaJobs(filters, countryData).catch(err => {
+        logger.error('Adzuna search failed', 'API', { error: err.message })
+        return []
+      }))
+    }
+
+    if (sources.includes('jsearch')) {
+      jobPromises.push(searchJSearchJobs(filters, countryData).catch(err => {
+        logger.error('JSearch search failed', 'API', { error: err.message })
+        return []
+      }))
+    }
+
+    if (sources.includes('reed') && countryData.isUK) {
+      jobPromises.push(searchReedJobs(filters).catch(err => {
+        logger.error('Reed search failed', 'API', { error: err.message })
+        return []
+      }))
+    }
+
+    // Wait for all sources to complete
+    const jobResults = await Promise.all(jobPromises)
+    const allJobs = jobResults.flat()
+
+    logger.info('Multi-source job search completed', 'SEARCH', {
+      totalJobs: allJobs.length,
+      sourceBreakdown: {
+        adzuna: jobResults[0]?.length || 0,
+        jsearch: jobResults[1]?.length || 0,
+        reed: jobResults[2]?.length || 0
+      }
+    })
+
+    if (!allJobs || allJobs.length === 0) {
+      return res.status(200).json({
+        jobs: [],
         total_results: 0,
-        message: 'No jobs found matching your criteria'
+        message: 'No jobs found matching your criteria. Try adjusting your search terms or location.',
+        search_metadata: {
+          sources_searched: sources,
+          country_detected: countryData.country
+        }
       })
     }
 
+    // Remove duplicates based on title and company
+    const uniqueJobs = deduplicateJobs(allJobs)
+    logger.info(`Removed ${allJobs.length - uniqueJobs.length} duplicate jobs`, 'SEARCH')
+
     // Get user profile and career objectives for AI matching
-    let enhancedJobs = adzunaJobs
+    let enhancedJobs = uniqueJobs
     if (generate_ai_matching) {
       const userContext = await getUserContext(user.id)
-      enhancedJobs = await enhanceJobsWithAI(adzunaJobs, userContext)
+      enhancedJobs = await enhanceJobsWithAI(uniqueJobs, userContext)
     }
 
     // Add user interaction data (saved/viewed status)
@@ -120,21 +190,32 @@ export default async function handler(
       try {
         await saveSearchSession(user.id, filters, finalJobs.length, finalJobs.map(job => job.id))
       } catch (sessionError) {
-        logger.error('Failed to save search session, but continuing', 'API', { error: sessionError })
-        // Don't fail the whole request if session saving fails
+        logger.error('Failed to save search session, but continuing', 'API', { error: sessionError instanceof Error ? sessionError.message : 'Unknown error' })
       }
     }
 
-    return res.status(200).json({
+    const responseData = {
       jobs: finalJobs,
       total_results: finalJobs.length,
       search_metadata: {
         query: filters.query,
         location: filters.location,
+        country_detected: countryData.country,
         filters_applied: filters,
-        ai_matching_enabled: generate_ai_matching
+        ai_matching_enabled: generate_ai_matching,
+        sources_searched: sources,
+        source_breakdown: {
+          adzuna: jobResults[0]?.length || 0,
+          jsearch: jobResults[1]?.length || 0,
+          reed: jobResults[2]?.length || 0
+        }
       }
-    })
+    }
+
+    // Cache the results
+    searchCache.set(cacheKey, { data: responseData, timestamp: Date.now() })
+
+    return res.status(200).json(responseData)
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -147,59 +228,91 @@ export default async function handler(
   }
 }
 
-async function searchAdzunaJobs(filters: JobSearchFilters): Promise<AdzunaJob[]> {
-  if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
-    throw new Error('Adzuna API credentials not configured')
+// Enhanced country detection function
+function detectCountry(location: string): { country: string; isUK: boolean; normalizedLocation: string } {
+  const loc = location.toLowerCase().trim()
+
+  if (!loc) {
+    return { country: 'us', isUK: false, normalizedLocation: '' }
   }
 
-  // Smart country detection
-  let country = 'us' // Default to US
-  
-  if (filters.location) {
-    const location = filters.location.toLowerCase()
-    
-    // Method 1: Use postcode patterns
-    const ukPostcodePattern = /^[a-z]{1,2}[0-9][a-z0-9]?\s?[0-9][a-z]{2}$/i
-    const usZipcodePattern = /^\d{5}(-\d{4})?$/
-    const caPostcodePattern = /^[a-z]\d[a-z]\s?\d[a-z]\d$/i
-    
-    if (ukPostcodePattern.test(location.trim())) {
-      country = 'gb'
-    } else if (usZipcodePattern.test(location.trim())) {
-      country = 'us'
-    } else if (caPostcodePattern.test(location.trim())) {
-      country = 'ca'
-    } else {
-      // Method 2: Use comprehensive keywords
-      const countryKeywords = {
-        'gb': [
-          'uk', 'britain', 'england', 'scotland', 'wales', 'northern ireland',
-          'london', 'manchester', 'birmingham', 'glasgow', 'liverpool', 'edinburgh',
-          'bristol', 'leeds', 'cardiff', 'belfast', 'sheffield', 'newcastle',
-          // Add some common UK terms
-          'midlands', 'yorkshire', 'lancashire', 'kent', 'surrey', 'devon'
-        ],
-        'ca': ['canada', 'toronto', 'vancouver', 'montreal', 'calgary', 'ottawa', 'quebec'],
-        'au': ['australia', 'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide', 'canberra']
-      }
-      
-      // Check if location contains any country-specific keywords
-      for (const [countryCode, keywords] of Object.entries(countryKeywords)) {
-        if (keywords.some(keyword => location.includes(keyword))) {
-          country = countryCode
-          break
-        }
-      }
-      
-      // Method 3: If still unsure and location looks European, default to GB
-      const europeanIndicators = ['.co.uk', '.uk', '£', 'pounds', 'pence', 'quid']
-      if (country === 'us' && europeanIndicators.some(indicator => location.includes(indicator))) {
-        country = 'gb'
-      }
+  // UK postcode patterns (comprehensive)
+  const ukPostcodePattern = /^[a-z]{1,2}\d{1,2}[a-z]?\s?\d[a-z]{2}$/i
+
+  // UK-specific keywords (expanded list)
+  const ukKeywords = [
+    // Countries
+    'uk', 'britain', 'england', 'scotland', 'wales', 'northern ireland', 'great britain',
+    // Major cities
+    'london', 'manchester', 'birmingham', 'glasgow', 'liverpool', 'edinburgh',
+    'bristol', 'leeds', 'cardiff', 'belfast', 'sheffield', 'newcastle', 'nottingham',
+    'leicester', 'coventry', 'bradford', 'stoke', 'wolverhampton', 'plymouth',
+    'southampton', 'reading', 'derby', 'portsmouth', 'brighton', 'oxford', 'cambridge',
+    // Regions
+    'midlands', 'yorkshire', 'lancashire', 'kent', 'surrey', 'devon', 'cornwall',
+    'essex', 'sussex', 'hampshire', 'norfolk', 'suffolk', 'cheshire', 'derbyshire',
+    'greater london', 'west midlands', 'south east', 'north west', 'south west',
+    // Counties
+    'hertfordshire', 'berkshire', 'buckinghamshire', 'oxfordshire', 'cambridgeshire'
+  ]
+
+  // Check UK postcode pattern
+  if (ukPostcodePattern.test(loc)) {
+    return { country: 'gb', isUK: true, normalizedLocation: location }
+  }
+
+  // Check UK keywords
+  if (ukKeywords.some(keyword => loc.includes(keyword))) {
+    return { country: 'gb', isUK: true, normalizedLocation: location }
+  }
+
+  // US zipcode pattern
+  const usZipcodePattern = /^\d{5}(-\d{4})?$/
+  if (usZipcodePattern.test(loc)) {
+    return { country: 'us', isUK: false, normalizedLocation: location }
+  }
+
+  // Canada postal code pattern
+  const caPostcodePattern = /^[a-z]\d[a-z]\s?\d[a-z]\d$/i
+  if (caPostcodePattern.test(loc)) {
+    return { country: 'ca', isUK: false, normalizedLocation: location }
+  }
+
+  // Check other countries
+  if (loc.includes('canada') || loc.includes('toronto') || loc.includes('vancouver') || loc.includes('montreal')) {
+    return { country: 'ca', isUK: false, normalizedLocation: location }
+  }
+
+  if (loc.includes('australia') || loc.includes('sydney') || loc.includes('melbourne') || loc.includes('brisbane')) {
+    return { country: 'au', isUK: false, normalizedLocation: location }
+  }
+
+  // Default to US
+  return { country: 'us', isUK: false, normalizedLocation: location }
+}
+
+// Deduplicate jobs based on title and company similarity
+function deduplicateJobs(jobs: AdzunaJob[]): AdzunaJob[] {
+  const seen = new Map<string, AdzunaJob>()
+
+  for (const job of jobs) {
+    const key = `${job.title.toLowerCase().trim()}-${job.company.display_name.toLowerCase().trim()}`
+    if (!seen.has(key)) {
+      seen.set(key, job)
     }
   }
 
-  logger.info(`Searching jobs in country: ${country} for location: ${filters.location}`, 'SEARCH', { country, location: filters.location })
+  return Array.from(seen.values())
+}
+
+async function searchAdzunaJobs(filters: JobSearchFilters, countryData: { country: string; isUK: boolean }): Promise<AdzunaJob[]> {
+  if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
+    logger.warn('Adzuna API credentials not configured', 'API')
+    return []
+  }
+
+  const country = countryData.country
+  logger.info(`Searching Adzuna in country: ${country}`, 'ADZUNA', { location: filters.location, country })
 
   // Construct Adzuna API URL
   const page = filters.page || 1
@@ -263,22 +376,205 @@ async function searchAdzunaJobs(filters: JobSearchFilters): Promise<AdzunaJob[]>
     return []
   }
 
-  return data.results.map((job: Record<string, unknown>) => ({
-    id: job.id,
-    title: job.title,
-    company: job.company,
-    location: job.location,
-    description: job.description,
-    salary_min: job.salary_min,
-    salary_max: job.salary_max,
-    salary_is_predicted: job.salary_is_predicted,
-    contract_type: job.contract_type,
-    contract_time: job.contract_time,
-    category: job.category,
-    created: job.created,
-    redirect_url: job.redirect_url,
-    adref: job.adref
-  }))
+  return data.results.map((job: Record<string, unknown>) => {
+    const redirectUrl = job.redirect_url as string || ''
+
+    // Ensure URL is valid
+    let validUrl = redirectUrl
+    if (redirectUrl && !redirectUrl.startsWith('http')) {
+      validUrl = `https://${redirectUrl}`
+    }
+
+    return {
+      id: `adzuna-${job.id}`,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      description: job.description,
+      salary_min: job.salary_min,
+      salary_max: job.salary_max,
+      salary_is_predicted: job.salary_is_predicted,
+      contract_type: job.contract_type,
+      contract_time: job.contract_time,
+      category: job.category,
+      created: job.created,
+      redirect_url: validUrl,
+      adref: job.adref,
+      source: 'adzuna' as const
+    }
+  })
+}
+
+async function searchJSearchJobs(filters: JobSearchFilters, _countryData: { country: string; isUK: boolean }): Promise<AdzunaJob[]> {
+  if (!JSEARCH_API_KEY) {
+    logger.warn('JSearch API key not configured', 'API')
+    return []
+  }
+
+  try {
+    const params = new URLSearchParams()
+
+    // Build query
+    let query = filters.query || 'Software Engineer'
+    if (filters.location) {
+      query += ` in ${filters.location}`
+    }
+    params.append('query', query)
+    params.append('page', '1')
+    params.append('num_pages', '1')
+    params.append('date_posted', 'month')
+
+    if (filters.remote) {
+      params.append('remote_jobs_only', 'true')
+    }
+
+    if (filters.employment_type) {
+      params.append('employment_types', filters.employment_type.toUpperCase())
+    }
+
+    const response = await fetch(`${JSEARCH_BASE_URL}?${params.toString()}`, {
+      headers: {
+        'X-RapidAPI-Key': JSEARCH_API_KEY,
+        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+      }
+    })
+
+    if (!response.ok) {
+      logger.error(`JSearch API error: ${response.status}`, 'JSEARCH')
+      return []
+    }
+
+    const data = await response.json()
+
+    if (!data.data || data.data.length === 0) {
+      return []
+    }
+
+    logger.info(`JSearch returned ${data.data.length} jobs`, 'JSEARCH')
+
+    return data.data.map((job: any) => {
+      const applyLink = job.job_apply_link || job.job_google_link || ''
+      let validUrl = applyLink
+      if (applyLink && !applyLink.startsWith('http')) {
+        validUrl = `https://${applyLink}`
+      }
+
+      return {
+        id: `jsearch-${job.job_id}`,
+        title: job.job_title,
+        company: {
+          display_name: job.employer_name,
+          logo_url: job.employer_logo
+        },
+        location: {
+          display_name: job.job_city && job.job_country
+            ? `${job.job_city}, ${job.job_country}`
+            : job.job_country || 'Remote'
+        },
+        description: job.job_description || '',
+        salary_min: job.job_min_salary,
+        salary_max: job.job_max_salary,
+        contract_type: job.job_employment_type,
+        category: {
+          label: job.job_occupation || 'General',
+          tag: 'general'
+        },
+        created: job.job_posted_at_datetime_utc || new Date().toISOString(),
+        redirect_url: validUrl,
+        source: 'jsearch' as const
+      }
+    })
+  } catch (error) {
+    logger.error('JSearch API request failed', 'JSEARCH', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    return []
+  }
+}
+
+async function searchReedJobs(filters: JobSearchFilters): Promise<AdzunaJob[]> {
+  if (!REED_API_KEY) {
+    logger.warn('Reed API key not configured', 'API')
+    return []
+  }
+
+  try {
+    const params = new URLSearchParams()
+
+    if (filters.query) {
+      params.append('keywords', filters.query)
+    }
+
+    if (filters.location) {
+      params.append('locationName', filters.location)
+    }
+
+    if (filters.salary_min) {
+      params.append('minimumSalary', filters.salary_min.toString())
+    }
+
+    if (filters.salary_max) {
+      params.append('maximumSalary', filters.salary_max.toString())
+    }
+
+    params.append('resultsToTake', '20')
+
+    const authHeader = `Basic ${Buffer.from(`${REED_API_KEY}:`).toString('base64')}`
+
+    const response = await fetch(`${REED_BASE_URL}?${params.toString()}`, {
+      headers: {
+        'Authorization': authHeader
+      }
+    })
+
+    if (!response.ok) {
+      logger.error(`Reed API error: ${response.status}`, 'REED')
+      return []
+    }
+
+    const data = await response.json()
+
+    if (!data.results || data.results.length === 0) {
+      return []
+    }
+
+    logger.info(`Reed returned ${data.results.length} jobs`, 'REED')
+
+    return data.results.map((job: any) => {
+      const jobUrl = job.jobUrl || ''
+      let validUrl = jobUrl
+      if (jobUrl && !jobUrl.startsWith('http')) {
+        validUrl = `https://www.reed.co.uk${jobUrl.startsWith('/') ? jobUrl : `/${jobUrl}`}`
+      }
+
+      return {
+        id: `reed-${job.jobId}`,
+        title: job.jobTitle,
+        company: {
+          display_name: job.employerName
+        },
+        location: {
+          display_name: job.locationName
+        },
+        description: job.jobDescription,
+        salary_min: job.minimumSalary,
+        salary_max: job.maximumSalary,
+        contract_type: job.contractType,
+        category: {
+          label: job.jobCategory || 'General',
+          tag: 'general'
+        },
+        created: job.date || new Date().toISOString(),
+        redirect_url: validUrl,
+        source: 'reed' as const
+      }
+    })
+  } catch (error) {
+    logger.error('Reed API request failed', 'REED', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    return []
+  }
 }
 
 async function getUserContext(userId: string): Promise<{ profile: UserProfile | null; objectives: CareerObjectives | null }> {
@@ -293,8 +589,10 @@ async function getUserContext(userId: string): Promise<{ profile: UserProfile | 
       objectives: objectivesResult.data
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    logger.error('Failed to fetch user context', 'DATABASE', { userId, error: errorMessage })
+    logger.error('Failed to fetch user context', 'DATABASE', {
+      userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
     return { profile: null, objectives: null }
   }
 }
@@ -331,7 +629,10 @@ async function enhanceJobsWithAI(jobs: AdzunaJob[], userContext: { profile: User
       }
     }
   } catch (error) {
-    logger.error('AI job enhancement failed', 'AI', { error: error.message, jobCount: jobs.length })
+    logger.error('AI job enhancement failed', 'AI', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      jobCount: jobs.length
+    })
   }
 
   // Fallback: return jobs with basic enhancements
@@ -398,7 +699,11 @@ async function addUserInteractionData(jobs: EnhancedJob[], userId: string): Prom
       is_viewed: interactionMap.get(job.id)?.has('viewed') || false
     }))
   } catch (error) {
-    logger.error('Failed to add user interaction data', 'DATABASE', { userId, jobCount: jobs.length, error: error.message })
+    logger.error('Failed to add user interaction data', 'DATABASE', {
+      userId,
+      jobCount: jobs.length,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
     return jobs
   }
 }
@@ -428,7 +733,10 @@ async function saveSearchSession(
 
     logger.info(`Search session saved successfully: ${data.id}`, 'DATABASE', { sessionId: data.id, userId })
   } catch (error) {
-    logger.error('Search session save failed unexpectedly', 'DATABASE', { userId, error: error.message })
+    logger.error('Search session save failed unexpectedly', 'DATABASE', {
+      userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
   }
 }
 

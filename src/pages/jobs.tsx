@@ -84,134 +84,162 @@ interface JobCardProps {
 }
 
 const JobCard = memo<JobCardProps>(({ job, onJobInteraction, getMatchScoreColor, formatTimeAgo }) => {
+  const [isSaving, setIsSaving] = useState(false)
+  const [isViewing, setIsViewing] = useState(false)
+
   // Source badge component
   const getSourceBadge = (source?: JobSource) => {
     const badges: Record<JobSource, { name: string; color: string }> = {
-      adzuna: { name: 'Adzuna', color: 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-      jsearch: { name: 'JSearch', color: 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' },
-      reed: { name: 'Reed', color: 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
-      github: { name: 'GitHub', color: 'bg-gray-100 dark:bg-gray-950/50 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-800' },
-      remoteok: { name: 'RemoteOK', color: 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800' }
+      adzuna: { name: 'Adzuna', color: 'text-xs font-medium text-blue-600 dark:text-blue-400' },
+      jsearch: { name: 'JSearch', color: 'text-xs font-medium text-green-600 dark:text-green-400' },
+      reed: { name: 'Reed', color: 'text-xs font-medium text-purple-600 dark:text-purple-400' },
+      github: { name: 'GitHub', color: 'text-xs font-medium text-gray-600 dark:text-gray-400' },
+      remoteok: { name: 'RemoteOK', color: 'text-xs font-medium text-orange-600 dark:text-orange-400' }
     }
     const badge = source ? badges[source] : null
     return badge ? (
-      <span className={`px-2 py-1 text-xs rounded border ${badge.color}`}>
+      <span className={badge.color}>
         {badge.name}
       </span>
     ) : null
   }
 
+  const handleSave = async () => {
+    setIsSaving(true)
+    await onJobInteraction(job, 'saved')
+    setTimeout(() => setIsSaving(false), 500)
+  }
+
+  const handleViewJob = (e: React.MouseEvent) => {
+    // Track the view
+    onJobInteraction(job, 'viewed')
+    setIsViewing(true)
+
+    // Debug: Log the URL
+    console.log('Opening job URL:', job.redirect_url, 'for job:', job.title)
+
+    // If redirect_url is missing or invalid, show an alert
+    if (!job.redirect_url || job.redirect_url === '' || job.redirect_url === '#') {
+      e.preventDefault()
+      alert(`Job URL not available for "${job.title}". This job may be expired or the source didn't provide a valid link.`)
+      setIsViewing(false)
+      return
+    }
+
+    // Check if it's a valid URL
+    try {
+      new URL(job.redirect_url)
+    } catch (error) {
+      e.preventDefault()
+      alert(`Invalid job URL: ${job.redirect_url}. Please try a different job.`)
+      setIsViewing(false)
+      return
+    }
+
+    // Reset viewing state after a short delay
+    setTimeout(() => setIsViewing(false), 1000)
+  }
+
   return (
-    <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-500 transition-colors">
+    <div className="group bg-white dark:bg-slate-800 rounded-lg p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
               {job.title}
             </h3>
+          </div>
+
+          {/* Company & Location */}
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-slate-600 dark:text-slate-400 mb-3">
+            <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+              <Building size={15} />
+              {job.company.display_name}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <MapPin size={15} />
+              {job.location.display_name}
+            </div>
+            {job.salary_formatted && (
+              <div className="flex items-center gap-1.5 text-green-600 dark:text-green-500 font-medium">
+                <DollarSign size={15} />
+                {job.salary_formatted}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Clock size={15} />
+              {formatTimeAgo(job.created)}
+            </div>
+            {job.location_type === 'remote' && (
+              <span className="px-2 py-0.5 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                Remote
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+            {job.description.substring(0, 200)}...
+          </p>
+
+          {/* Match Score & Tags */}
+          <div className="flex items-center flex-wrap gap-2">
             {(job.ai_match_score || job.ai_insights?.match_score) && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
-                <Star size={14} className={getMatchScoreColor(job.ai_match_score || job.ai_insights?.match_score)} />
-                <span className={`text-sm font-medium ${getMatchScoreColor(job.ai_match_score || job.ai_insights?.match_score)}`}>
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-950/30 rounded">
+                <Star size={12} className={getMatchScoreColor(job.ai_match_score || job.ai_insights?.match_score)} fill="currentColor" />
+                <span className={`text-xs font-medium ${getMatchScoreColor(job.ai_match_score || job.ai_insights?.match_score)}`}>
                   {job.ai_match_score || job.ai_insights?.match_score}% match
                 </span>
               </div>
             )}
-            {job.location_type === 'remote' && (
-              <span className="px-2 py-1 bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400 text-xs rounded-lg border border-green-200 dark:border-green-800">
-                Remote
-              </span>
-            )}
+            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded">
+              {job.category.label}
+            </span>
+            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded">
+              {job.contract_type || 'Full-time'}
+            </span>
             {getSourceBadge(job.source)}
-          </div>
-
-          <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400 mb-3">
-            <div className="flex items-center gap-1">
-              <Building size={16} />
-              {job.company.display_name}
-              {job.company_insights?.rating && (
-                <div className="flex items-center gap-1 ml-2">
-                  <Star size={14} className="text-yellow-500" fill="currentColor" />
-                  <span className="text-sm">{job.company_insights.rating.toFixed(1)}</span>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <MapPin size={16} />
-              {job.location.display_name}
-            </div>
-            {job.salary_formatted && (
-              <div className="flex items-center gap-1">
-                <DollarSign size={16} />
-                {job.salary_formatted}
-                {job.salary_benchmarks?.market_position && (
-                  <span className={`text-xs px-1 py-0.5 rounded ${
-                    job.salary_benchmarks.market_position === 'above' ? 'text-green-600 bg-green-50' :
-                    job.salary_benchmarks.market_position === 'below' ? 'text-red-600 bg-red-50' :
-                    'text-slate-600 bg-slate-50'
-                  }`}>
-                    {job.salary_benchmarks.market_position}
-                  </span>
-                )}
-              </div>
-            )}
-            <div className="flex items-center gap-1">
-              <Clock size={16} />
-              {formatTimeAgo(job.created)}
-            </div>
-          </div>
-
-          <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3">
-            {job.description.substring(0, 300)}...
-          </p>
-
-          {(job.match_reasons || job.ai_insights?.match_reasoning) && (
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-blue-600 dark:text-blue-500 mb-2">Why this matches:</h4>
-              <div className="flex flex-wrap gap-2">
-                {(job.match_reasons || job.ai_insights?.match_reasoning || []).map((reason, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-xs rounded border border-blue-200 dark:border-blue-800"
-                  >
-                    {reason}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded">{job.category.label}</span>
-            <span className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded">{job.contract_type || 'Full-time'}</span>
-            {job.ai_insights?.career_growth_potential && (
-              <span className="px-2 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded">
-                {job.ai_insights.career_growth_potential} Growth
-              </span>
-            )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 ml-4">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onJobInteraction(job, 'saved')}
-            className={`p-2 rounded-lg transition-colors ${
+            onClick={handleSave}
+            disabled={isSaving || job.is_saved}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               job.is_saved
-                ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-500 border border-blue-200 dark:border-blue-800'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-700'
+                ? 'bg-blue-600 text-white cursor-default'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 dark:hover:text-blue-400'
             }`}
           >
-            {job.is_saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+            {job.is_saved ? (
+              <>
+                <BookmarkCheck size={16} />
+                Saved
+              </>
+            ) : (
+              <>
+                <Bookmark size={16} />
+                {isSaving ? 'Saving...' : 'Save'}
+              </>
+            )}
           </button>
 
           <a
-            href={job.redirect_url}
+            href={job.redirect_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => onJobInteraction(job, 'viewed')}
-            className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all text-white"
+            onClick={handleViewJob}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+              isViewing
+                ? 'bg-blue-700 text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
-            <ExternalLink size={18} />
+            {isViewing ? 'Opening...' : 'View Job'}
+            <ExternalLink size={16} />
           </a>
         </div>
       </div>
@@ -455,48 +483,53 @@ export default function JobsPage() {
     <PageLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
-            Job Search
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            Find Your Next Opportunity
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
-            AI-powered job matching based on your career goals
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            Search across multiple job boards with AI-powered matching
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 mb-6">
-          <div className="flex gap-4 mb-4">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700 mb-6">
+          <div className="flex gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Search jobs (e.g., Software Engineer, Product Manager)"
+                placeholder="Job title or keyword (e.g., Software Engineer)"
                 value={filters.query}
                 onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
                 onKeyDown={(e) => e.key === 'Enter' && performSearch()}
-                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
-            <div className="relative min-w-[200px]">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+
+            <div className="relative w-64">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Location"
+                placeholder="Location (e.g., London, UK)"
                 value={filters.location}
                 onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
                 onKeyDown={(e) => e.key === 'Enter' && performSearch()}
-                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <button
               onClick={() => performSearch()}
               disabled={loading}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-all disabled:opacity-50 text-white min-w-[100px]"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-sm transition-all disabled:opacity-50 text-white min-w-[120px]"
             >
-              {loading ? 'Searching...' : 'Search'}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Searching
+                </span>
+              ) : 'Search Jobs'}
             </button>
           </div>
 

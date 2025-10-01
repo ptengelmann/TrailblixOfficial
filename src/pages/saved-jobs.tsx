@@ -1,7 +1,7 @@
 // src/pages/saved-jobs.tsx - Enhanced with Applied Jobs tab
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
@@ -10,7 +10,7 @@ import {
   Bookmark, ExternalLink, Trash2, Star, Building, MapPin,
   DollarSign, Clock, Eye, Send, Edit3, FileText,
   ChevronRight, TrendingUp, AlertTriangle, CheckCircle,
-  Check, RotateCcw
+  Check, RotateCcw, RefreshCw
 } from 'lucide-react'
 // Define job sources directly since we removed the types file
 type JobSource = 'adzuna' | 'jsearch' | 'reed' | 'github' | 'remoteok'
@@ -92,19 +92,7 @@ export default function SavedJobsPage() {
   const [notes, setNotes] = useState('')
   const [processingJobs, setProcessingJobs] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, authLoading, router])
-
-  useEffect(() => {
-    if (user) {
-      loadJobData()
-    }
-  }, [user])
-
-  const loadJobData = async () => {
+  const loadJobData = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -152,7 +140,57 @@ export default function SavedJobsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login')
+    }
+  }, [user, authLoading, router])
+
+  useEffect(() => {
+    if (user) {
+      loadJobData()
+    }
+  }, [user, loadJobData])
+
+  // Refresh data when page becomes visible (e.g., navigating back from job search)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        loadJobData()
+      }
+    }
+
+    const handleFocus = () => {
+      if (user) {
+        loadJobData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [user, loadJobData])
+
+  // Refresh data when router changes (navigating to this page)
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (user) {
+        loadJobData()
+      }
+    }
+
+    router.events?.on('routeChangeComplete', handleRouteChange)
+
+    return () => {
+      router.events?.off('routeChangeComplete', handleRouteChange)
+    }
+  }, [user, router, loadJobData])
 
   const removeJob = async (jobId: string, fromTab: TabType) => {
     setProcessingJobs(prev => new Set([...prev, jobId]))
@@ -574,13 +612,23 @@ export default function SavedJobsPage() {
     <PageLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
-            Job Applications
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
-            Manage your saved opportunities and track your applications
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+              Job Applications
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              Manage your saved opportunities and track your applications
+            </p>
+          </div>
+          <button
+            onClick={() => loadJobData()}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
         </div>
 
         {/* Stats Overview */}
