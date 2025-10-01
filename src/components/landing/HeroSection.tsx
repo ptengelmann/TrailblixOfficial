@@ -100,7 +100,7 @@ export default function HeroSection() {
   }, [])
 
   return (
-    <section className="relative py-20 overflow-hidden bg-white dark:bg-slate-950">
+    <section className="relative pt-24 pb-20 overflow-hidden bg-white dark:bg-slate-950">
       {/* Subtle background pattern */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(-45deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:20px_20px]" />
@@ -108,8 +108,8 @@ export default function HeroSection() {
         <div className="absolute bottom-20 left-20 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Content */}
           <div className="space-y-8">
             {/* Live metrics badge */}
@@ -123,14 +123,14 @@ export default function HeroSection() {
 
             {/* Headline */}
             <div>
-              <h1 className="text-5xl md:text-6xl font-light text-slate-900 dark:text-white leading-tight mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light text-slate-900 dark:text-white leading-[1.1] mb-6">
                 AI-powered career intelligence
-                <span className="block font-semibold text-blue-600 dark:text-blue-500">
+                <span className="block mt-2 font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   for strategic decisions
                 </span>
               </h1>
 
-              <p className="text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8">
+              <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed max-w-2xl">
                 TrailBlix analyzes millions of job postings, salary data, and career paths to predict market trends, forecast your earning potential, and identify the exact skills you need for your next career move.
               </p>
             </div>
@@ -186,7 +186,7 @@ export default function HeroSection() {
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <Users size={16} className="text-indigo-500" />
-                <span>Used by 50K+ professionals</span>
+                <span>Free to get started</span>
               </div>
             </div>
           </div>

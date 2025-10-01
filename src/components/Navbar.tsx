@@ -1,8 +1,7 @@
 import Link from 'next/link'
-import { useRouter } from 'next/router'
 import { useAuth } from '@/contexts/AuthContext'
 import { useState, useEffect } from 'react'
-import { Menu, X, Brain, Phone, Info, CreditCard } from 'lucide-react'
+import { Menu, X, BookOpen, Phone, Info, Zap } from 'lucide-react'
 
 interface NavbarProps {
   variant?: 'marketing' | 'app'
@@ -35,44 +34,47 @@ export default function Navbar({ variant = 'marketing' }: NavbarProps) {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent hover:scale-105 transition-transform"
           >
-            Traiblix
+            TrailBlix
           </Link>
           
           <div className="hidden lg:flex items-center gap-1">
-            <Link 
-              href="#about"
-              className="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
+            <Link
+              href="/about"
+              className="px-4 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <Info className="w-4 h-4" />
               About Us
             </Link>
-            
-            <Link 
-              href="#ai-engine"
-              className="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
+
+            <Link
+              href="/how-it-works"
+              className="px-4 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <Brain className="w-4 h-4" />
-              AI Engine
+              How It Works
             </Link>
-            
-            <Link 
-              href="#pricing"
-              className="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
+
+            <Link
+              href="/pricing"
+              className="px-4 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <CreditCard className="w-4 h-4" />
               Pricing
             </Link>
 
-            <Link 
-              href="#contact"
-              className="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
+            <Link
+              href="/contact"
+              className="px-4 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <Phone className="w-4 h-4" />
               Contact
+            </Link>
+
+            <Link
+              href="/blog"
+              className="px-4 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Blog
             </Link>
           </div>
 
@@ -115,39 +117,43 @@ export default function Navbar({ variant = 'marketing' }: NavbarProps) {
         <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-top duration-200">
           <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
             <Link
-              href="#about"
+              href="/about"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="block px-3 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <Info className="w-5 h-5" />
               About Us
             </Link>
-            
+
             <Link
-              href="#ai-engine"
+              href="/how-it-works"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="block px-3 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <Brain className="w-5 h-5" />
-              AI Engine
+              How It Works
             </Link>
-            
+
             <Link
-              href="#pricing"
+              href="/pricing"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="block px-3 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <CreditCard className="w-5 h-5" />
               Pricing
             </Link>
 
             <Link
-              href="#contact"
+              href="/contact"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="block px-3 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              <Phone className="w-5 h-5" />
               Contact
+            </Link>
+
+            <Link
+              href="/blog"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 text-sm font-light text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Blog
             </Link>
 
             <div className="pt-4 space-y-2 border-t border-slate-200 dark:border-slate-800 mt-4">
