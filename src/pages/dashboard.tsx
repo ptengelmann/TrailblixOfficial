@@ -22,11 +22,12 @@ import {
 } from 'lucide-react'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
-import ProgressWidgets from '@/components/dashboard/ProgressWidgets'
 import NetworkingTracker from '@/components/NetworkingTracker'
-import DailyTasks from '@/components/dashboard/DailyTasks'
 import ActivityFeed from '@/components/dashboard/ActivityFeed'
-import CareerInsights from '@/components/dashboard/CareerInsights'
+import AIPersonalizedTasks from '@/components/dashboard/AIPersonalizedTasks'
+import RealAIInsights from '@/components/dashboard/RealAIInsights'
+import CareerProgression from '@/components/dashboard/CareerProgression'
+import WeeklyAIFocus from '@/components/dashboard/WeeklyAIFocus'
 import { logger } from '@/lib/logger'
 import type { UserProfile, CareerObjectives } from '@/types/api'
 
@@ -422,7 +423,7 @@ export default function Dashboard() {
                 </Link>
                 {isSetupComplete && (
                   <Link
-                    href="/intelligence-dashboard"
+                    href="/intelligence"
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
                   >
                     AI Insights →
@@ -565,53 +566,48 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Job Stats & Progress */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Job Activity */}
-                {jobStats && (
-                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-                    <h3 className="font-semibold text-slate-900 dark:text-white mb-6">Job Activity</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-500 mb-1">{jobStats.saved_jobs || 0}</p>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm">Saved</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-500 mb-1">{jobStats.applied_jobs || 0}</p>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm">Applied</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-500 mb-1">{jobStats.viewed_jobs || 0}</p>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm">Viewed</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-500 mb-1">
-                          {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
-                        </p>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm">Apply Rate</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Progress Widget */}
-                {showProgressTracking && isSetupComplete && (
-                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="text-blue-600 dark:text-blue-500" size={16} />
-                      </div>
-                      <h3 className="font-semibold text-slate-900 dark:text-white">Career Progress</h3>
-                    </div>
-                    <ProgressWidgets userId={user.id} />
-                  </div>
-                )}
-              </div>
-
-              {/* Daily Tasks */}
+              {/* Career Progression & Weekly Focus */}
               {isSetupComplete && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <DailyTasks />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <CareerProgression />
+                  <WeeklyAIFocus />
+                </div>
+              )}
+
+              {/* AI-Personalized Daily Tasks */}
+              {isSetupComplete && (
+                <AIPersonalizedTasks />
+              )}
+
+              {/* Real AI Insights */}
+              {isSetupComplete && (
+                <RealAIInsights />
+              )}
+
+              {/* Job Stats */}
+              {jobStats && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-6">Job Activity</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-500 mb-1">{jobStats.saved_jobs || 0}</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">Saved</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-500 mb-1">{jobStats.applied_jobs || 0}</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">Applied</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-500 mb-1">{jobStats.viewed_jobs || 0}</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">Viewed</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-500 mb-1">
+                        {jobStats.viewed_jobs > 0 ? Math.round((jobStats.applied_jobs / jobStats.viewed_jobs) * 100) : 0}%
+                      </p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">Apply Rate</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </>
@@ -632,9 +628,7 @@ export default function Dashboard() {
           {activeTab === 'insights' && (
             <>
               {isSetupComplete ? (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <CareerInsights />
-                </div>
+                <RealAIInsights />
               ) : (
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 text-center">
                   <Brain className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />

@@ -91,7 +91,7 @@ export default function CareerCoach() {
         setLastGenerated(savedRecsResult.data[0].created_at)
       }
 
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Failed to load user data for career coach', 'DATABASE', { userId: user?.id, error: error.message })
     } finally {
       setLoading(false)

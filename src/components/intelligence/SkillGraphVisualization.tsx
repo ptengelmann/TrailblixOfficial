@@ -154,7 +154,7 @@ export default function SkillGraphVisualization({
       .attr('font-size', '9px')
       .attr('fill', 'white')
       .attr('opacity', 0.9)
-      .text((d: any) => `+${d.impact}% 💰`)
+      .text((d: any) => `+${d.impact}%`)
 
     // Priority badge
     node.filter((d: any) => d.priority === 'critical')
@@ -327,7 +327,7 @@ export default function SkillGraphVisualization({
       </div>
 
       <div className="mt-4 text-xs text-slate-600 dark:text-slate-400 text-center">
-        💡 Hover over skills to see details • Drag to rearrange • Bigger circles = higher priority
+        Hover over skills to see details • Drag to rearrange • Bigger circles = higher priority
       </div>
     </div>
   )

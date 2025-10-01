@@ -6,9 +6,9 @@ import { useRouter } from 'next/router'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import PageLayout from '@/components/PageLayout'
-import CareerJourneyFlow from '@/components/intelligence/CareerJourneyFlow'
-import DetailedSalaryAnalysis from '@/components/intelligence/DetailedSalaryAnalysis'
-import SkillGraphVisualization from '@/components/intelligence/SkillGraphVisualization'
+import CareerTimelineView from '@/components/intelligence/CareerTimelineView'
+import SalaryAnalysisView from '@/components/intelligence/SalaryAnalysisView'
+import SkillsAnalysisView from '@/components/intelligence/SkillsAnalysisView'
 import {
   Brain,
   TrendingUp,
@@ -17,7 +17,6 @@ import {
   Zap,
   AlertCircle,
   Loader2,
-  Sparkles,
   BarChart3,
   Award,
   CheckCircle2,
@@ -197,117 +196,131 @@ export default function IntelligenceDashboard() {
 
   const views = [
     { id: 'overview', name: 'Overview', icon: BarChart3 },
-    { id: 'journey', name: 'Career Journey', icon: TrendingUp },
-    { id: 'salary', name: 'Salary Deep Dive', icon: DollarSign },
-    { id: 'skills', name: 'Skills Universe', icon: Brain },
+    { id: 'journey', name: 'Career Path', icon: TrendingUp },
+    { id: 'salary', name: 'Salary Analysis', icon: DollarSign },
+    { id: 'skills', name: 'Skills Analysis', icon: Brain },
     { id: 'actions', name: 'Action Plan', icon: Zap }
   ]
 
   return (
     <PageLayout>
       <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* Premium Header */}
-        <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950 rounded-2xl p-8 shadow-2xl border border-blue-800/30">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30">
-                <Brain className="text-white" size={32} />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-1">AI Intelligence Dashboard</h1>
-                <p className="text-blue-200">Real-time market analytics & predictive career modeling</p>
-              </div>
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-light text-slate-900 dark:text-white mb-2">
+                AI Intelligence Dashboard
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400">
+                Real-time market analytics & predictive career modeling
+              </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg border border-white/20">
-                <p className="text-xs text-blue-200 mb-0.5">Confidence</p>
-                <p className="text-lg font-bold text-white">{analysis.confidence_score}%</p>
+              <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Confidence</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.confidence_score}%</p>
               </div>
-              <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg border border-white/20">
-                <p className="text-xs text-green-200 mb-0.5">Market Fit</p>
-                <p className="text-lg font-bold text-white">{analysis.market_fit.overall_score}/100</p>
+              <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Market Fit</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.market_fit.overall_score}/100</p>
               </div>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="text-blue-400" size={18} />
-                <span className="text-xs text-blue-200">Readiness</span>
-              </div>
-              <p className="text-lg font-bold text-white capitalize">{analysis.market_fit.readiness_level.replace('_', ' ')}</p>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="text-purple-400" size={18} />
-                <span className="text-xs text-purple-200">Timeline</span>
-              </div>
-              <p className="text-lg font-bold text-white">{analysis.market_fit.estimated_timeline_to_goal}</p>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="text-green-400" size={18} />
-                <span className="text-xs text-green-200">Potential</span>
-              </div>
-              <p className="text-lg font-bold text-white">+${analysis.salary_insights.potential_increase.amount.toLocaleString()}</p>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="text-pink-400" size={18} />
-                <span className="text-xs text-pink-200">Skills Gap</span>
-              </div>
-              <p className="text-lg font-bold text-white">{analysis.skill_analysis.skills_to_learn.length} to learn</p>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Award className="text-yellow-400" size={18} />
-                <span className="text-xs text-yellow-200">Percentile</span>
-              </div>
-              <p className="text-lg font-bold text-white">Top {100 - analysis.competitive_analysis.your_percentile}%</p>
             </div>
           </div>
         </div>
 
-        {/* View Navigation */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
-          <div className="px-4 py-3">
-            <nav className="flex gap-2">
-              {views.map((view) => {
-                const Icon = view.icon
-                return (
-                  <button
-                    key={view.id}
-                    onClick={() => setActiveView(view.id)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all text-sm ${
-                      activeView === view.id
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {view.name}
-                  </button>
-                )
-              })}
-            </nav>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div className="group bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-200 cursor-pointer">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Target className="text-blue-600" size={16} />
+              </div>
+              <span className="text-xs text-slate-600 dark:text-slate-400">Readiness</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white capitalize">{analysis.market_fit.readiness_level.replace('_', ' ')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Your current market readiness level</p>
           </div>
+
+          <div className="group bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-lg transition-all duration-200 cursor-pointer">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Clock className="text-purple-600" size={16} />
+              </div>
+              <span className="text-xs text-slate-600 dark:text-slate-400">Timeline</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.market_fit.estimated_timeline_to_goal}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Estimated time to reach your goal</p>
+          </div>
+
+          <div className="group bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 hover:shadow-lg transition-all duration-200 cursor-pointer">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-950/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <DollarSign className="text-green-600" size={16} />
+              </div>
+              <span className="text-xs text-slate-600 dark:text-slate-400">Potential</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">+${analysis.salary_insights.potential_increase.amount.toLocaleString()}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Potential salary increase</p>
+          </div>
+
+          <div className="group bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-pink-500 dark:hover:border-pink-500 hover:shadow-lg transition-all duration-200 cursor-pointer">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-950/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Brain className="text-pink-600" size={16} />
+              </div>
+              <span className="text-xs text-slate-600 dark:text-slate-400">Skills Gap</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.skill_analysis.skills_to_learn.length} to learn</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Skills needed for your target role</p>
+          </div>
+
+          <div className="group bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-yellow-500 dark:hover:border-yellow-500 hover:shadow-lg transition-all duration-200 cursor-pointer">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Award className="text-yellow-600" size={16} />
+              </div>
+              <span className="text-xs text-slate-600 dark:text-slate-400">Percentile</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">Top {100 - analysis.competitive_analysis.your_percentile}%</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Your ranking vs other candidates</p>
+          </div>
+        </div>
+
+        {/* View Navigation */}
+        <div className="border-b border-slate-200 dark:border-slate-700 mb-6">
+          <nav className="flex space-x-8">
+            {views.map((view) => {
+              const Icon = view.icon
+              return (
+                <button
+                  key={view.id}
+                  onClick={() => setActiveView(view.id)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeView === view.id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-500'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Icon size={16} />
+                  {view.name}
+                </button>
+              )
+            })}
+          </nav>
         </div>
 
         {/* Content Views */}
         <div className="space-y-6">
           {/* Career Journey View */}
           {activeView === 'journey' && (
-            <CareerJourneyFlow
+            <CareerTimelineView
               currentRole={analysis.career_path.current_position}
               targetRole={analysis.career_path.target_position}
               mostLikelyNext={analysis.career_path.most_likely_next_role}
+              timeline={analysis.market_fit.estimated_timeline_to_goal}
+              probability={analysis.career_path.probability_of_success}
               alternativePaths={analysis.career_path.alternative_paths}
               salaryData={analysis.salary_insights}
             />
@@ -315,7 +328,7 @@ export default function IntelligenceDashboard() {
 
           {/* Salary Deep Dive */}
           {activeView === 'salary' && (
-            <DetailedSalaryAnalysis
+            <SalaryAnalysisView
               currentSalary={analysis.salary_insights.current_salary}
               targetRole={analysis.career_path.target_position}
               location="United States"
@@ -330,12 +343,13 @@ export default function IntelligenceDashboard() {
             />
           )}
 
-          {/* Skills Universe */}
+          {/* Skills Analysis */}
           {activeView === 'skills' && (
-            <SkillGraphVisualization
-              currentSkills={analysis.skill_analysis.skills_you_have}
+            <SkillsAnalysisView
+              skillsYouHave={analysis.skill_analysis.skills_you_have}
               skillsToLearn={analysis.skill_analysis.skills_to_learn}
               targetRoleSkills={analysis.skill_analysis.target_role_skills}
+              coveragePercentage={analysis.skill_analysis.skill_coverage_percentage}
             />
           )}
 
@@ -430,42 +444,142 @@ export default function IntelligenceDashboard() {
             </div>
           )}
 
-          {/* Overview - Show everything */}
+          {/* Overview - Summary Dashboard */}
           {activeView === 'overview' && (
             <div className="space-y-6">
-              <CareerJourneyFlow
-                currentRole={analysis.career_path.current_position}
-                targetRole={analysis.career_path.target_position}
-                mostLikelyNext={analysis.career_path.most_likely_next_role}
-                alternativePaths={analysis.career_path.alternative_paths}
-                salaryData={analysis.salary_insights}
-              />
+              {/* Market Fit Summary */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Market Readiness Assessment</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">AI-powered analysis of your career positioning</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-blue-600">{analysis.market_fit.overall_score}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">out of 100</div>
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-600" />
+                      Your Strengths
+                    </h4>
+                    <ul className="space-y-2">
+                      {analysis.market_fit.key_strengths.map((strength: string, i: number) => (
+                        <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-600 mt-1.5 flex-shrink-0"></div>
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <AlertCircle size={16} className="text-orange-600" />
+                      Areas to Improve
+                    </h4>
+                    <ul className="space-y-2">
+                      {analysis.market_fit.improvement_areas.map((area: string, i: number) => (
+                        <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-1.5 flex-shrink-0"></div>
+                          {area}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Competitive Analysis */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Competitive Positioning</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Resume Quality</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.competitive_analysis.vs_market_average.resume_quality}</p>
+                  </div>
+                  <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Experience Level</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.competitive_analysis.vs_market_average.experience_level}</p>
+                  </div>
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Skill Breadth</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.competitive_analysis.vs_market_average.skill_breadth}</p>
+                  </div>
+                  <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Application Activity</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysis.competitive_analysis.vs_market_average.application_activity}</p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Your Competitive Advantages</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.competitive_analysis.competitive_advantages.map((advantage: string, i: number) => (
+                      <span key={i} className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm rounded-full">
+                        {advantage}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Actions Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Insights</h3>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Zap size={20} className="text-orange-600" />
+                    Immediate Actions
+                  </h3>
                   <div className="space-y-3">
-                    {analysis.market_overview?.key_insights?.slice(0, 5).map((insight: string, i: number) => (
-                      <div key={i} className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                        <Sparkles size={16} className="text-blue-600 mt-1 flex-shrink-0" />
-                        <p className="text-sm text-slate-700 dark:text-slate-300">{insight}</p>
+                    {analysis.action_plan.immediate_actions.slice(0, 3).map((action: any, i: number) => (
+                      <div key={i} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+                        <div className="flex items-start justify-between mb-2">
+                          <span className={`text-xs font-bold px-2 py-1 rounded ${
+                            action.impact === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            action.impact === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                          }`}>
+                            {action.impact.toUpperCase()} IMPACT
+                          </span>
+                          <span className={`text-xs font-bold px-2 py-1 rounded ${
+                            action.effort === 'low' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            action.effort === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                          }`}>
+                            {action.effort.toUpperCase()} EFFORT
+                          </span>
+                        </div>
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">{action.action}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{action.why}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Top Priority Skills</h3>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Brain size={20} className="text-purple-600" />
+                    Critical Skills to Learn
+                  </h3>
                   <div className="space-y-3">
-                    {analysis.skill_analysis.skills_to_learn.slice(0, 5).map((skill: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                        <div>
-                          <p className="font-medium text-slate-900 dark:text-white">{skill.skill}</p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">Learn in: {skill.learning_time}</p>
+                    {analysis.skill_analysis.skills_to_learn.filter((s: any) => s.priority === 'critical' || s.priority === 'high').slice(0, 3).map((skill: any, i: number) => (
+                      <div key={i} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-purple-500 dark:hover:border-purple-500 transition-colors">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-slate-900 dark:text-white text-sm">{skill.skill}</p>
+                          <span className={`text-xs font-bold px-2 py-1 rounded ${
+                            skill.priority === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                          }`}>
+                            {skill.priority.toUpperCase()}
+                          </span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-green-600 dark:text-green-400">+{skill.impact_on_salary}%</p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">{skill.priority}</p>
+                        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                          <span>Learn in: {skill.learning_time}</span>
+                          <span className="text-green-600 dark:text-green-400 font-semibold">+{skill.impact_on_salary}% salary</span>
                         </div>
                       </div>
                     ))}

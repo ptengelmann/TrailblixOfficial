@@ -173,7 +173,7 @@ export default async function handler(
     // Build snapshot
     const hasProfile = !!profileResult.data?.full_name
     const hasObjectives = !!objectivesResult.data
-    const hasResume = resumesResult.data && resumesResult.data.length > 0
+    const hasResume = !!(resumesResult.data && resumesResult.data.length > 0)
 
     const snapshot: UserSnapshot = {
       user_id: user.id,
@@ -251,7 +251,7 @@ export default async function handler(
         const salaryResult = await salaryResponse.json()
         salaryData = salaryResult.data
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Failed to fetch salary data for analysis', 'API', { error: error.message })
     }
 

@@ -23,7 +23,7 @@ export default function Navigation() {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'AI Intelligence', href: '/intelligence-dashboard', icon: Brain, highlight: true },
+    { name: 'AI Intelligence', href: '/intelligence', icon: Brain, highlight: true },
     { name: 'Profile & Goals', href: '/profile', icon: User },
     { name: 'Resume Analyzer', href: '/resume-analyzer', icon: FileText },
     { name: 'AI Career Coach', href: '/career-coach', icon: Sparkles },
@@ -32,7 +32,12 @@ export default function Navigation() {
     { name: 'Settings', href: '/settings', icon: Settings },
   ]
 
-  const isActive = (href: string) => router.pathname === href
+  const isActive = (href: string) => {
+    if (href === '/intelligence') {
+      return router.pathname === '/intelligence' || router.pathname === '/intelligence-dashboard' || router.pathname === '/intelligence-dashboard-v2'
+    }
+    return router.pathname === href
+  }
 
   return (
     <>

@@ -56,7 +56,7 @@ export default function CareerJourneyFlow({
         id: 'next',
         role: mostLikelyNext,
         timeline: '12-18 months',
-        salary_range: salaryData ? { min: salaryData.salary_range.min, max: salaryData.salary_range.median } : undefined,
+        salary_range: salaryData?.target_role_range ? { min: salaryData.target_role_range.min, max: salaryData.target_role_range.median } : undefined,
         status: 'next',
         probability: 75
       },
@@ -64,7 +64,7 @@ export default function CareerJourneyFlow({
         id: 'target',
         role: targetRole,
         timeline: '2-3 years',
-        salary_range: salaryData ? { min: salaryData.salary_range.median, max: salaryData.salary_range.max } : undefined,
+        salary_range: salaryData?.target_role_range ? { min: salaryData.target_role_range.median, max: salaryData.target_role_range.max } : undefined,
         status: 'target',
         probability: 85
       }
@@ -292,8 +292,10 @@ export default function CareerJourneyFlow({
         </div>
       </div>
 
-      <div className="flex justify-center">
-        <svg ref={svgRef} className="max-w-full h-auto"></svg>
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[1000px]">
+          <svg ref={svgRef} className="w-full h-auto"></svg>
+        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-4 gap-4">
