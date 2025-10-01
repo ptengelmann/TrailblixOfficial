@@ -167,7 +167,8 @@ export default function DailyTasks() {
         logger.info('Daily progress not available yet', 'COMPONENT', { component: 'DailyTasks' })
       }
     } catch (error) {
-      logger.error('Failed to load daily progress', 'COMPONENT', { component: 'DailyTasks', error: error.message })
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load daily progress', 'COMPONENT', { component: 'DailyTasks', error: errorMessage })
       // Don't show error to user for daily progress - just log it
     }
   }
@@ -199,7 +200,8 @@ export default function DailyTasks() {
           setTasks(tasksWithCompletionStatus)
           await loadDailyProgress()
         } catch (error) {
-          logger.error('Failed to initialize daily tasks', 'API', { component: 'DailyTasks', error: error.message })
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          logger.error('Failed to initialize daily tasks', 'API', { component: 'DailyTasks', error: errorMessage })
         } finally {
           setLoading(false)
         }
@@ -253,7 +255,8 @@ export default function DailyTasks() {
       }
 
     } catch (error) {
-      logger.error('Failed to complete daily task', 'API', { component: 'DailyTasks', taskId: task.id, error: error.message })
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to complete daily task', 'API', { component: 'DailyTasks', taskId: task.id, error: errorMessage })
       // Revert optimistic update on error
       setTasks(prev => prev.map(t =>
         t.id === task.id ? { ...t, completed: false } : t

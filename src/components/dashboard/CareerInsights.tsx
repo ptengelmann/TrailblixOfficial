@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { CareerObjectives, JobInteraction, UserActivity } from '@/types/progress'
+import { UserActivity } from '@/types/progress'
+import type { CareerObjectives, JobInteraction } from '@/types/api'
 import { logger } from '@/lib/logger'
 import {
   Lightbulb, TrendingUp, Target, AlertCircle,
@@ -84,7 +85,8 @@ export default function CareerInsights() {
       }
 
     } catch (error) {
-      logger.error('Failed to generate career insights', 'AI', { userId: user?.id, error: error.message, component: 'CareerInsights' })
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to generate career insights', 'AI', { userId: user?.id, error: errorMessage, component: 'CareerInsights' })
     } finally {
       setLoading(false)
     }
@@ -148,7 +150,7 @@ export default function CareerInsights() {
     }
 
     // Networking insight
-    const networkingActivities = activities.filter(a => a.activity_type === 'networking_activity').length
+    const networkingActivities = activities.filter(a => (a.activity_type as string) === 'networking_activity').length
     if (networkingActivities < 5) {
       insights.push({
         id: 'networking_gap',

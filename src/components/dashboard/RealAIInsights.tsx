@@ -56,8 +56,9 @@ export default function RealAIInsights() {
         })
       }
 
-    } catch (error: any) {
-      logger.error('Failed to load AI insights', 'COMPONENT', { error: error.message })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load AI insights', 'COMPONENT', { error: errorMessage })
     } finally {
       setLoading(false)
     }

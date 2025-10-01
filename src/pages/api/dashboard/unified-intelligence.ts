@@ -158,13 +158,14 @@ export default async function handler(
 
     return res.status(200).json({ success: true, data: dashboardIntelligence })
 
-  } catch (error: any) {
-    logger.error('Failed to generate dashboard intelligence', 'API', { error: error.message })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Failed to generate dashboard intelligence', 'API', { error: errorMessage })
     return res.status(500).json({ error: 'Failed to generate intelligence' })
   }
 }
 
-async function getOrGenerateIntelligence(userId: string, userSupabase: any) {
+async function getOrGenerateIntelligence(userId: string, userSupabase: unknown) {
   // Check if we have recent comprehensive analysis (last 24 hours)
   const { data: latestReport } = await supabase
     .from('career_intelligence_reports')
@@ -196,7 +197,7 @@ async function triggerComprehensiveAnalysis(userId: string) {
   logger.info('Comprehensive analysis needed', 'API', { userId })
 }
 
-async function generateAIPersonalizedTasks(userId: string, intelligence: any, userSupabase: any) {
+async function generateAIPersonalizedTasks(userId: string, intelligence: unknown, userSupabase: unknown) {
   // If we have comprehensive intelligence, use it to generate tasks
   if (intelligence) {
     return await generateTasksFromIntelligence(intelligence)
@@ -206,43 +207,52 @@ async function generateAIPersonalizedTasks(userId: string, intelligence: any, us
   return await generateBasicTasks(userId, userSupabase)
 }
 
-async function generateTasksFromIntelligence(intelligence: any) {
+async function generateTasksFromIntelligence(intelligence: unknown) {
   const tasks = []
+  const intel = intelligence as Record<string, unknown>
 
   // Extract critical skills with high impact
-  const criticalSkills = intelligence.skill_analysis?.skills_to_learn
-    ?.filter((s: any) => s.priority === 'critical')
-    .slice(0, 2) || []
+  const skillAnalysis = intel.skill_analysis as Record<string, unknown> | undefined
+  const skillsToLearn = (skillAnalysis?.skills_to_learn as Array<Record<string, unknown>>) || []
+  const criticalSkills = skillsToLearn
+    .filter((s) => s.priority === 'critical')
+    .slice(0, 2)
 
   for (const skill of criticalSkills) {
     tasks.push({
-      id: `skill_${skill.skill.toLowerCase().replace(/\s+/g, '_')}`,
+      id: `skill_${String(skill.skill).toLowerCase().replace(/\s+/g, '_')}`,
       title: `Learn ${skill.skill}`,
       description: `Focus on ${skill.skill} - critical for your target role`,
       type: 'skill_building' as const,
       priority: 'critical' as const,
       points: 50,
-      estimated_time: skill.learning_time,
+      estimated_time: String(skill.learning_time || ''),
       ai_reasoning: `This skill has +${skill.impact_on_salary}% salary impact and is marked as critical priority in your intelligence analysis`,
-      resources: skill.resources
+      resources: (skill.resources as string[]) || []
     })
   }
 
   // Add immediate actions from action plan
-  const immediateActions = intelligence.action_plan?.immediate_actions
-    ?.filter((a: any) => a.impact === 'high')
-    .slice(0, 3) || []
+  const actionPlan = intel.action_plan as Record<string, unknown> | undefined
+  const immediateActions = (actionPlan?.immediate_actions as Array<Record<string, unknown>>) || []
+  const highImpactActions = immediateActions
+    .filter((a) => a.impact === 'high')
+    .slice(0, 3)
 
-  for (const action of immediateActions) {
+  for (const action of highImpactActions) {
+    const actionText = String(action.action || '')
+    const effort = String(action.effort || 'medium')
+    const impact = String(action.impact || 'medium')
+
     tasks.push({
       id: `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      title: action.action,
-      description: action.why,
-      type: determineTaskType(action.action),
+      title: actionText,
+      description: String(action.why || ''),
+      type: determineTaskType(actionText),
       priority: 'high' as const,
-      points: action.effort === 'low' ? 30 : action.effort === 'medium' ? 40 : 50,
-      estimated_time: action.effort === 'low' ? '15 mins' : action.effort === 'medium' ? '30 mins' : '1 hour',
-      ai_reasoning: `${action.impact.toUpperCase()} impact action from AI analysis`
+      points: effort === 'low' ? 30 : effort === 'medium' ? 40 : 50,
+      estimated_time: effort === 'low' ? '15 mins' : effort === 'medium' ? '30 mins' : '1 hour',
+      ai_reasoning: `${impact.toUpperCase()} impact action from AI analysis`
     })
   }
 
@@ -258,7 +268,7 @@ function determineTaskType(actionText: string): 'application' | 'networking' | '
   return 'skill_building'
 }
 
-async function generateBasicTasks(userId: string, userSupabase: any) {
+async function generateBasicTasks(userId: string, userSupabase: unknown) {
   // Fallback basic tasks
   return [
     {
@@ -284,7 +294,7 @@ async function generateBasicTasks(userId: string, userSupabase: any) {
   ]
 }
 
-async function generateRealAIInsights(userId: string, intelligence: any, userSupabase: any) {
+async function generateRealAIInsights(userId: string, intelligence: unknown, userSupabase: unknown) {
   const insights = []
 
   if (!intelligence) {
@@ -298,12 +308,18 @@ async function generateRealAIInsights(userId: string, intelligence: any, userSup
     }]
   }
 
+  const intel = intelligence as Record<string, unknown>
+  const marketFit = intel.market_fit as Record<string, unknown> | undefined
+  const salaryInsights = intel.salary_insights as Record<string, unknown> | undefined
+  const skillAnalysis = intel.skill_analysis as Record<string, unknown> | undefined
+
   // Market fit insights
-  if (intelligence.market_fit.overall_score < 70) {
+  if (marketFit && Number(marketFit.overall_score) < 70) {
+    const improvementAreas = marketFit.improvement_areas as string[] | undefined
     insights.push({
       type: 'warning' as const,
-      title: 'Market Readiness: ' + intelligence.market_fit.readiness_level,
-      message: `Your market fit score is ${intelligence.market_fit.overall_score}/100. ${intelligence.market_fit.improvement_areas[0]}`,
+      title: 'Market Readiness: ' + String(marketFit.readiness_level || ''),
+      message: `Your market fit score is ${marketFit.overall_score}/100. ${improvementAreas?.[0] || ''}`,
       action: 'View detailed analysis',
       priority: 'high' as const,
       data_source: 'claude_ai_comprehensive_analysis'
@@ -311,11 +327,12 @@ async function generateRealAIInsights(userId: string, intelligence: any, userSup
   }
 
   // Salary opportunity
-  if (intelligence.salary_insights?.potential_increase?.amount > 0) {
+  const potentialIncrease = salaryInsights?.potential_increase as Record<string, unknown> | undefined
+  if (potentialIncrease && Number(potentialIncrease.amount) > 0) {
     insights.push({
       type: 'opportunity' as const,
-      title: `$${intelligence.salary_insights.potential_increase.amount.toLocaleString()} Salary Opportunity`,
-      message: `You could increase your salary by ${intelligence.salary_insights.potential_increase.percentage}% by moving to your target role`,
+      title: `$${Number(potentialIncrease.amount).toLocaleString()} Salary Opportunity`,
+      message: `You could increase your salary by ${potentialIncrease.percentage}% by moving to your target role`,
       action: 'View salary analysis',
       priority: 'high' as const,
       data_source: 'adzuna_api_real_market_data'
@@ -323,7 +340,8 @@ async function generateRealAIInsights(userId: string, intelligence: any, userSup
   }
 
   // Skills gap
-  const criticalGaps = intelligence.skill_analysis?.skills_to_learn?.filter((s: any) => s.priority === 'critical').length || 0
+  const skillsToLearn = (skillAnalysis?.skills_to_learn as Array<Record<string, unknown>>) || []
+  const criticalGaps = skillsToLearn.filter((s) => s.priority === 'critical').length
   if (criticalGaps > 0) {
     insights.push({
       type: 'warning' as const,
@@ -338,7 +356,7 @@ async function generateRealAIInsights(userId: string, intelligence: any, userSup
   return insights
 }
 
-async function calculateConnectedProgress(userId: string, intelligence: any, userSupabase: any) {
+async function calculateConnectedProgress(userId: string, intelligence: unknown, userSupabase: unknown) {
   if (!intelligence) {
     return {
       market_readiness_score: 0,
@@ -350,24 +368,29 @@ async function calculateConnectedProgress(userId: string, intelligence: any, use
     }
   }
 
+  const intel = intelligence as Record<string, unknown>
+  const marketFit = intel.market_fit as Record<string, unknown> | undefined
+  const skillAnalysis = intel.skill_analysis as Record<string, unknown> | undefined
+
   return {
-    market_readiness_score: intelligence.market_fit.overall_score,
-    skills_coverage: intelligence.skill_analysis.skill_coverage_percentage,
+    market_readiness_score: Number(marketFit?.overall_score || 0),
+    skills_coverage: Number(skillAnalysis?.skill_coverage_percentage || 0),
     application_velocity: 75, // Would calculate from job_interactions
     networking_score: 60, // Would calculate from user_activities
-    overall_momentum: intelligence.market_fit.overall_score,
+    overall_momentum: Number(marketFit?.overall_score || 0),
     week_over_week_change: 5 // Would calculate from weekly_progress
   }
 }
 
-async function calculateMeaningfulProgression(userId: string, userSupabase: any) {
+async function calculateMeaningfulProgression(userId: string, userSupabase: unknown) {
   // Get total XP
-  const { data: activities } = await userSupabase
+  const client = userSupabase as { from: (table: string) => { select: (cols: string) => { eq: (col: string, val: string) => Promise<{ data: Array<Record<string, unknown>> | null }> } } }
+  const { data: activities } = await client
     .from('user_activities')
     .select('points_earned')
     .eq('user_id', userId)
 
-  const totalXP = activities?.reduce((sum: number, a: any) => sum + (a.points_earned || 0), 0) || 0
+  const totalXP = activities?.reduce((sum: number, a) => sum + (Number(a.points_earned) || 0), 0) || 0
   const currentLevel = Math.floor(totalXP / 100) + 1
   const xpToNext = ((currentLevel) * 100) - totalXP
 
@@ -403,7 +426,7 @@ async function calculateMeaningfulProgression(userId: string, userSupabase: any)
   }
 }
 
-async function generateWeeklyAIFocus(userId: string, intelligence: any, userSupabase: any) {
+async function generateWeeklyAIFocus(userId: string, intelligence: unknown, userSupabase: unknown) {
   if (!intelligence) {
     return {
       main_goal: 'Complete your career profile',
@@ -414,13 +437,17 @@ async function generateWeeklyAIFocus(userId: string, intelligence: any, userSupa
     }
   }
 
-  // Use the first high-impact immediate action as main goal
-  const primaryAction = intelligence.action_plan.immediate_actions
-    .find((a: any) => a.impact === 'high') || intelligence.action_plan.immediate_actions[0]
+  const intel = intelligence as Record<string, unknown>
+  const actionPlan = intel.action_plan as Record<string, unknown> | undefined
+  const immediateActions = (actionPlan?.immediate_actions as Array<Record<string, unknown>>) || []
+  const primaryAction = immediateActions.find((a) => a.impact === 'high') || immediateActions[0] || { action: '', why: '' }
+
+  const skillAnalysis = intel.skill_analysis as Record<string, unknown> | undefined
+  const skillsYouHave = (skillAnalysis?.skills_you_have as Array<unknown>) || []
 
   return {
-    main_goal: primaryAction.action,
-    why_this_matters: primaryAction.why,
+    main_goal: String(primaryAction.action || ''),
+    why_this_matters: String(primaryAction.why || ''),
     success_metrics: [
       {
         metric: 'Applications Submitted',
@@ -430,12 +457,12 @@ async function generateWeeklyAIFocus(userId: string, intelligence: any, userSupa
       },
       {
         metric: 'Skills Improved',
-        current: intelligence.skill_analysis.skills_you_have.length,
-        target: intelligence.skill_analysis.skills_you_have.length + 3,
+        current: skillsYouHave.length,
+        target: skillsYouHave.length + 3,
         unit: 'skills'
       }
     ],
-    daily_actions: intelligence.action_plan.this_week,
-    ai_confidence: intelligence.confidence_score || 85
+    daily_actions: (actionPlan?.this_week as string[]) || [],
+    ai_confidence: Number(intel.confidence_score) || 85
   }
 }

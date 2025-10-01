@@ -59,8 +59,9 @@ export default function CareerProgression() {
         })
       }
 
-    } catch (error: any) {
-      logger.error('Failed to load progression', 'COMPONENT', { error: error.message })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load progression', 'COMPONENT', { error: errorMessage })
     } finally {
       setLoading(false)
     }
@@ -197,7 +198,7 @@ export default function CareerProgression() {
             Maximum Level Achieved!
           </h4>
           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            You've unlocked all features. Keep earning XP to maintain your streak!
+            You&apos;ve unlocked all features. Keep earning XP to maintain your streak!
           </p>
         </div>
       )}

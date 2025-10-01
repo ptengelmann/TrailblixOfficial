@@ -79,7 +79,8 @@ export default function NetworkingTracker() {
 
       setActivities(formattedActivities)
     } catch (error) {
-      logger.error('Failed to load networking activities', 'DATABASE', { userId: user?.id, error: error.message, component: 'NetworkingTracker' })
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load networking activities', 'DATABASE', { userId: user?.id, error: errorMessage, component: 'NetworkingTracker' })
     } finally {
       setLoading(false)
     }
@@ -130,7 +131,8 @@ export default function NetworkingTracker() {
         setShowAddForm(false)
       }
     } catch (error) {
-      logger.error('Failed to add networking activity', 'DATABASE', { userId: user?.id, error: error.message, component: 'NetworkingTracker' })
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to add networking activity', 'DATABASE', { userId: user?.id, error: errorMessage, component: 'NetworkingTracker' })
     } finally {
       setSaving(false)
     }

@@ -82,7 +82,7 @@ export default function AIPersonalizedTasks() {
         .gte('created_at', today)
 
       const completedIds = new Set(
-        completed?.map((a: any) => a.activity_data?.task_id).filter(Boolean) || []
+        completed?.map((a) => a.activity_data?.task_id).filter(Boolean) || []
       )
       setCompletedTaskIds(completedIds)
 
@@ -91,9 +91,10 @@ export default function AIPersonalizedTasks() {
         source: result.data.metadata.analysis_source
       })
 
-    } catch (error: any) {
-      logger.error('Failed to load AI tasks', 'COMPONENT', { error: error.message })
-      setError(error.message)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load AI tasks', 'COMPONENT', { error: errorMessage })
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -130,8 +131,9 @@ export default function AIPersonalizedTasks() {
 
       logger.info('Task completed', 'USER_ACTION', { taskId: task.id, points: task.points })
 
-    } catch (error: any) {
-      logger.error('Failed to complete task', 'API', { error: error.message })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to complete task', 'API', { error: errorMessage })
       // Revert on error
       setCompletedTaskIds(prev => {
         const newSet = new Set(prev)

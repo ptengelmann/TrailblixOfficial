@@ -61,8 +61,9 @@ export default function WeeklyAIFocus() {
         })
       }
 
-    } catch (error: any) {
-      logger.error('Failed to load weekly focus', 'COMPONENT', { error: error.message })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to load weekly focus', 'COMPONENT', { error: errorMessage })
     } finally {
       setLoading(false)
     }
@@ -107,7 +108,7 @@ export default function WeeklyAIFocus() {
           <div className="flex items-center gap-2 mb-1">
             <Target className="text-indigo-600" size={20} />
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              This Week's Focus
+              This Week&apos;s Focus
             </h3>
             <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold rounded">
               AI POWERED
