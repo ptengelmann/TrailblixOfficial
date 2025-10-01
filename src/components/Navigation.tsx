@@ -23,6 +23,7 @@ export default function Navigation() {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'AI Intelligence', href: '/intelligence-dashboard', icon: Brain, highlight: true },
     { name: 'Profile & Goals', href: '/profile', icon: User },
     { name: 'Resume Analyzer', href: '/resume-analyzer', icon: FileText },
     { name: 'AI Career Coach', href: '/career-coach', icon: Sparkles },
@@ -61,6 +62,7 @@ export default function Navigation() {
               {navigation.map((item) => {
                 const Icon = item.icon
                 const active = isActive(item.href)
+                const isHighlight = 'highlight' in item && item.highlight
                 return (
                   <Link
                     key={item.name}
@@ -68,13 +70,20 @@ export default function Navigation() {
                     className={`group relative flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                       active
                         ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400'
+                        : isHighlight
+                        ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 text-indigo-700 dark:text-indigo-300 hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-950/50 dark:hover:to-purple-950/50 border border-indigo-200 dark:border-indigo-800/30'
                         : 'text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
                     }`}
                   >
                     <Icon className={`mr-3 flex-shrink-0 h-5 w-5 ${
-                      active ? 'text-blue-600 dark:text-blue-400' : ''
+                      active ? 'text-blue-600 dark:text-blue-400' : isHighlight ? 'text-indigo-600 dark:text-indigo-400' : ''
                     }`} />
                     {item.name}
+                    {isHighlight && !active && (
+                      <span className="ml-auto px-2 py-0.5 bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-full">
+                        NEW
+                      </span>
+                    )}
                     {active && (
                       <div className="absolute right-3 w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
                     )}
@@ -122,6 +131,7 @@ export default function Navigation() {
             {navigation.map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
+              const isHighlight = 'highlight' in item && item.highlight
               return (
                 <Link
                   key={item.name}
@@ -130,13 +140,20 @@ export default function Navigation() {
                   className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
                     active
                       ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400'
+                      : isHighlight
+                      ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/30'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <Icon className={`mr-3 h-5 w-5 ${
-                    active ? 'text-blue-600 dark:text-blue-400' : ''
+                    active ? 'text-blue-600 dark:text-blue-400' : isHighlight ? 'text-indigo-600 dark:text-indigo-400' : ''
                   }`} />
                   {item.name}
+                  {isHighlight && !active && (
+                    <span className="ml-auto px-2 py-0.5 bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-full">
+                      NEW
+                    </span>
+                  )}
                 </Link>
               )
             })}

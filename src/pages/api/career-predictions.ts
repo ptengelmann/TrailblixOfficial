@@ -334,8 +334,8 @@ MARKET CONTEXT (2025):
 - Key skills in demand: ${market_context.skill_demands?.join(', ') || 'AI, Cloud, Leadership'}
 
 HISTORICAL PATTERNS:
-${historicalPatterns.length > 0 ?
-  historicalPatterns.map((p: any) => `${p.from_role} → ${p.to_role} (${p.frequency} cases, avg. ${p.timeline})`).join('\n') :
+${historical_patterns && historical_patterns.length > 0 ?
+  historical_patterns.map((p: any) => `${p.from_role} → ${p.to_role} (${p.frequency} cases, avg. ${p.timeline})`).join('\n') :
   'Building pattern database from real career transitions...'
 }
 

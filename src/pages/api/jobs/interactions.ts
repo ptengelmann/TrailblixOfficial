@@ -282,14 +282,14 @@ async function listInteractions(
   requestData: JobInteractionRequest
 ) {
   try {
-    logger.info(`Listing interactions for user: ${userId}`, 'DATABASE', { userId, params: { interaction_type, limit, offset, include_ai_analysis } })
-
-    const { 
+    const {
       interaction_type,
       limit = 20,
       offset = 0,
       include_ai_analysis = false
     } = requestData
+
+    logger.info(`Listing interactions for user: ${userId}`, 'DATABASE', { userId, params: { interaction_type, limit, offset, include_ai_analysis } })
 
     // Build the select query
     let selectFields = `

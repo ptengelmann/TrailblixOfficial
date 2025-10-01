@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { usePredictivePrefetch } from '@/lib/prefetch'
 import Link from 'next/link'
 import {
   User,
@@ -49,6 +50,10 @@ type TabType = 'overview' | 'activity' | 'networking' | 'insights'
 export default function Dashboard() {
   const { user, loading } = useAuth()
   const router = useRouter()
+
+  // Enable predictive prefetching
+  usePredictivePrefetch(user?.id)
+
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
