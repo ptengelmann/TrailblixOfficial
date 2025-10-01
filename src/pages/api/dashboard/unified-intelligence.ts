@@ -6,6 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { logger } from '@/lib/logger'
+import { withAIAccess, type AuthenticatedRequest } from '@/middleware/subscription'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,

@@ -1,10 +1,11 @@
 // Advanced Salary Intelligence & Benchmarking System
 // Real-time salary analysis with predictive forecasting
 
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { withAIAccess, type AuthenticatedRequest } from '@/middleware/subscription'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -125,9 +126,9 @@ interface SalaryIntelligenceResponse {
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<SalaryIntelligenceResponse | { error: string }>
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse<SalaryIntelligenceResponse | { error: string; success?: boolean; message?: string }>
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -677,3 +678,6 @@ function getExperienceLevel(years?: number): string {
   if (years <= 10) return 'senior'
   return 'executive'
 }
+
+// Export handler with AI access middleware
+export default withAIAccess(handler, 'ai_insights_per_month')

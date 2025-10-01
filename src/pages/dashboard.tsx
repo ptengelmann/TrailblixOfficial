@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { usePredictivePrefetch } from '@/lib/prefetch'
+import { useSubscription } from '@/contexts/SubscriptionContext'
 import Link from 'next/link'
 import {
   User,
@@ -18,7 +19,9 @@ import {
   Users,
   Brain,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Crown,
+  Zap
 } from 'lucide-react'
 import PageLayout from '@/components/PageLayout'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
@@ -51,6 +54,7 @@ type TabType = 'overview' | 'activity' | 'networking' | 'insights'
 export default function Dashboard() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const { plan, usage, isPro, isTrial } = useSubscription()
 
   // Enable predictive prefetching
   usePredictivePrefetch(user?.id)
@@ -357,6 +361,108 @@ export default function Dashboard() {
             {profile?.current_role || 'Complete your setup to unlock personalized career insights'}
           </p>
         </div>
+
+        {/* Subscription Status */}
+        {plan && (
+          <div className={`rounded-xl p-4 mb-6 border ${
+            isPro
+              ? 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/50 dark:to-blue-950/50 border-purple-200 dark:border-purple-800'
+              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Plan Badge */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                  isPro
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}>
+                  {isPro ? <Crown size={16} /> : <Zap size={16} />}
+                  <span className="font-semibold text-sm">{plan.name}</span>
+                  {isTrial && <span className="text-xs opacity-90">(Trial)</span>}
+                </div>
+
+                {/* Usage Stats for Free Users */}
+                {!isPro && usage && usage.ai_insights && (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      <span className="font-medium">{usage.ai_insights.current}</span>
+                      <span> / </span>
+                      <span>{usage.ai_insights.limit}</span>
+                      <span className="ml-1">AI insights used this month</span>
+                    </div>
+                    <div className="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-500 ${
+                          usage.ai_insights.current >= usage.ai_insights.limit
+                            ? 'bg-red-600'
+                            : 'bg-blue-600'
+                        }`}
+                        style={{
+                          width: `${Math.min((usage.ai_insights.current / usage.ai_insights.limit) * 100, 100)}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Pro Features Summary */}
+                {isPro && (
+                  <div className="hidden sm:block text-sm text-slate-600 dark:text-slate-400">
+                    <span className="font-medium text-purple-600 dark:text-purple-400">Unlimited AI insights</span>
+                    <span className="mx-2">•</span>
+                    <span>All Pro features unlocked</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Button */}
+              {!isPro && (
+                <Link
+                  href="/pricing"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all"
+                >
+                  <Crown size={16} />
+                  Upgrade to Pro
+                  <ChevronRight size={16} />
+                </Link>
+              )}
+
+              {isPro && (
+                <Link
+                  href="/pricing"
+                  className="px-4 py-2 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900 dark:hover:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Manage Plan
+                </Link>
+              )}
+            </div>
+
+            {/* Mobile Usage Stats */}
+            {!isPro && usage && usage.ai_insights && (
+              <div className="sm:hidden mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-slate-600 dark:text-slate-400">AI insights this month</span>
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {usage.ai_insights.current} / {usage.ai_insights.limit}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      usage.ai_insights.current >= usage.ai_insights.limit
+                        ? 'bg-red-600'
+                        : 'bg-blue-600'
+                    }`}
+                    style={{
+                      width: `${Math.min((usage.ai_insights.current / usage.ai_insights.limit) * 100, 100)}%`
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Interactive Progress Guidance */}
         {!isSetupComplete && nextStep && (

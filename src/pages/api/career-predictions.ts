@@ -1,10 +1,11 @@
 // Advanced Predictive Career Modeling System
 // Machine learning-powered career trajectory prediction with 94%+ accuracy
 
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { withProAccess, type AuthenticatedRequest } from '@/middleware/subscription'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -150,9 +151,9 @@ interface CareerPredictionResponse {
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<CareerPredictionResponse | { error: string }>
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse<CareerPredictionResponse | { error: string; success?: boolean; message?: string; code?: string; upgradeUrl?: string; currentPlan?: string }>
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -169,6 +170,7 @@ export default async function handler(
     }
 
     logger.info('Career prediction analysis started', 'PREDICTION_AI', {
+      userId: req.user?.userId,
       current_role: user_profile.current_role,
       years_experience: user_profile.years_experience,
       timeframe: prediction_timeframe
@@ -507,3 +509,6 @@ async function savePredictionAnalysis(data: any) {
     logger.warn('Failed to save prediction analysis', 'DATABASE', { error })
   }
 }
+
+// Export handler with Pro access middleware
+export default withProAccess(handler, 'career_predictions')

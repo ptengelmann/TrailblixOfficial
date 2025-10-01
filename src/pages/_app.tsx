@@ -2,6 +2,7 @@
 import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
 import { ToastProvider } from '@/components/Toast'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
@@ -9,9 +10,11 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <ToastProvider>
-          <Component {...pageProps} />
-        </ToastProvider>
+        <SubscriptionProvider>
+          <ToastProvider>
+            <Component {...pageProps} />
+          </ToastProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

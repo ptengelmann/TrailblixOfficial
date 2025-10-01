@@ -2,10 +2,11 @@
 // Generates personalized market intelligence, career predictions, and actionable insights
 // Uses REAL user data from all sources
 
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { withAIAccess, type AuthenticatedRequest } from '@/middleware/subscription'
 import type { UserSnapshot } from './user-snapshot'
 
 const anthropic = new Anthropic({
@@ -116,8 +117,8 @@ interface ComprehensiveAnalysis {
   generated_at: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
+async function handler(
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   if (req.method !== 'POST') {
@@ -466,3 +467,6 @@ IMPORTANT:
 
   throw new Error('Failed to parse AI response')
 }
+
+// Export handler with AI access middleware
+export default withAIAccess(handler, 'ai_insights_per_month')

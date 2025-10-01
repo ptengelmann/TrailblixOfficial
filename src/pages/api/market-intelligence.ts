@@ -1,10 +1,11 @@
 // Advanced AI Market Intelligence System
 // Real-time job market analysis with predictive modeling
 
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiResponse } from 'next'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { withAIAccess, type AuthenticatedRequest } from '@/middleware/subscription'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -113,9 +114,9 @@ interface MarketIntelligenceResponse {
   confidence_score: number
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<MarketIntelligenceResponse | { error: string }>
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse<MarketIntelligenceResponse | { error: string; success?: boolean; message?: string }>
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -552,3 +553,6 @@ async function saveMarketAnalysis(data: any) {
     // Don't fail the request if caching fails
   }
 }
+
+// Export handler with AI access middleware (tracks usage)
+export default withAIAccess(handler, 'ai_insights_per_month')
